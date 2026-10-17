@@ -219,12 +219,12 @@ const handleRegister = async () => {
     });
 
     regSuccessMessage.value = res.message || 'Đăng ký thành công! Mật khẩu ban đầu đã được gửi qua email.';
-    registeredInitialPassword.value = res.data?.initialPassword || '';
+    registeredInitialPassword.value = '';
     // Giữ trống hoàn toàn các trường, không tự ý điền thông tin
     loginUsername.value = '';
     loginPassword.value = '';
     loginMode.value = 'password';
-    notification.success('Đăng ký tài khoản thành công! Mật khẩu ban đầu đã được gửi qua email.');
+    notification.success('Đăng ký tài khoản thành công! Mật khẩu đã được gửi về email của bạn.');
   } catch (err) {
     regErrors.general = err.message || 'Không thể đăng ký tài khoản. Vui lòng thử lại.';
   } finally {
@@ -771,25 +771,19 @@ const handleConfirmReset = async () => {
                   <span class="fw-bold font-monospace text-primary fs-6">{{ regUsername }}</span>
                 </div>
 
-                <div v-if="registeredInitialPassword" class="mb-2">
-                  <div class="small text-muted mb-1">Mật khẩu ban đầu của bạn:</div>
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="fw-bold font-monospace text-danger fs-5 px-3 py-1 bg-white rounded border flex-grow-1 text-center user-select-all">{{ registeredInitialPassword }}</span>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
-                      @click="copyPassword(registeredInitialPassword)"
-                    >
-                      <i class="bi" :class="copyPasswordSuccess ? 'bi-check-lg text-success' : 'bi-clipboard'"></i>
-                      <span>{{ copyPasswordSuccess ? 'Đã chép' : 'Sao chép' }}</span>
-                    </button>
-                  </div>
-                </div>
-
                 <div class="small text-muted mt-2 pt-2 border-top">
-                  <i class="bi bi-envelope-check me-1 text-success"></i> Hệ thống đã gửi email xác nhận và mật khẩu đến <strong>{{ regEmail }}</strong>.
-                  <div class="text-warning-emphasis mt-1" style="font-size: 12px;">
-                    <i class="bi bi-info-circle me-1"></i> <em>Lưu ý: Nếu không thấy trong Hộp thư đến, vui lòng kiểm tra thư mục <strong>Spam / Thư rác</strong> hoặc mục <strong>Quảng cáo / Cập nhật</strong> trong Gmail của bạn.</em>
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-envelope-check-fill text-success fs-5"></i>
+                    <span class="text-main fw-semibold">Mật khẩu khởi tạo đã được gửi đến email:</span>
+                  </div>
+                  <div class="p-2 px-3 bg-white rounded border fw-bold text-primary font-monospace mb-2 user-select-all">
+                    {{ regEmail }}
+                  </div>
+                  <div class="text-secondary" style="font-size: 13px;">
+                    Vì lý do bảo mật, mật khẩu đăng nhập ban đầu chỉ được gửi duy nhất về hòm thư này. Vui lòng mở email để lấy mật khẩu đăng nhập vào phòng thu LsmVoice.
+                  </div>
+                  <div class="text-warning-emphasis mt-2" style="font-size: 12px;">
+                    <i class="bi bi-info-circle me-1"></i> <em>Lưu ý: Nếu không thấy trong Hộp thư đến, vui lòng kiểm tra thêm thư mục <strong>Spam / Thư rác</strong> hoặc mục <strong>Quảng cáo / Cập nhật</strong> trong Gmail của bạn.</em>
                   </div>
                 </div>
               </div>

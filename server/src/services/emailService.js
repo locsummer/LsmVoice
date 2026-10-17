@@ -223,6 +223,42 @@ class EmailService {
   }
 
   /**
+   * 0.0 Gửi email qua Google Apps Script Web App Relay (HTTPS Port 443 - Dùng chính Gmail của bạn, không bao giờ bị Render chặn)
+   */
+  async sendViaGoogleAppsScript({ to, subject, html, text }) {
+    const scriptUrl = (process.env.GMAIL_SCRIPT_URL || process.env.GOOGLE_SCRIPT_URL || '').trim();
+    if (!scriptUrl) return null;
+
+    const payload = {
+      to,
+      subject: subject.startsWith('[LsmVoice]') ? subject : `[LsmVoice] ${subject}`,
+      html,
+      text: text || subject,
+    };
+
+    const response = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      redirect: 'follow',
+    });
+
+    const data = await response.json().catch(() => ({ success: response.ok }));
+    if (!response.ok && data?.error) {
+      throw new Error(data.error || `Google Apps Script HTTP ${response.status}`);
+    }
+
+    console.log(`[EmailService] ✓ Gửi email thành công qua Google Apps Script Web App tới "${to}"`);
+    return {
+      success: true,
+      provider: 'google_script_https',
+      to,
+    };
+  }
+
+  /**
    * 0. Gửi email qua Brevo REST API (HTTPS Port 443 - Không bao giờ bị chặn trên Render Free Tier)
    */
   async sendViaBrevo({ to, subject, html, text }) {
@@ -326,7 +362,16 @@ class EmailService {
 
     this.lastSentEmail = { ...mailOptions, sentAt: new Date() };
 
-    // 1. Ưu tiên kiểm tra và gửi qua Brevo / Resend Web API (HTTPS Cổng 443 - Không bao giờ bị chặn trên Render Free Tier)
+    // 1. Ưu tiên kiểm tra và gửi qua các kênh HTTPS Web API (Cổng 443 - Không bao giờ bị chặn trên Render Free Tier)
+    if (process.env.GMAIL_SCRIPT_URL || process.env.GOOGLE_SCRIPT_URL) {
+      try {
+        const res = await this.sendViaGoogleAppsScript({ to, subject, html, text });
+        if (res) return res;
+      } catch (scriptErr) {
+        console.warn(`[EmailService] ⚠️ Google Apps Script HTTPS gặp lỗi (${scriptErr.message}). Đang chuyển sang các kênh khác...`);
+      }
+    }
+
     if (process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY) {
       try {
         const res = await this.sendViaBrevo({ to, subject, html, text });

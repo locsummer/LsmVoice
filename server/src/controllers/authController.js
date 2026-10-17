@@ -142,7 +142,6 @@ export const register = async (req, res, next) => {
         userId,
         username: cleanUsername,
         email: cleanEmail,
-        initialPassword,
       },
     });
   } catch (err) {
