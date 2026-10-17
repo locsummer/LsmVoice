@@ -21,37 +21,79 @@ class EmailService {
     dotenv.config({ path: rootEnvPath, override: true });
     dotenv.config({ override: true });
 
-    const host = process.env.MAIL_HOST;
-    const port = parseInt(process.env.MAIL_PORT, 10) || 587;
+    const rawHost = (process.env.MAIL_HOST || '').trim();
+    const port = parseInt(process.env.MAIL_PORT, 10) || 465;
     const user = (process.env.MAIL_USERNAME || process.env.MAIL_USER || '').trim();
     const pass = (process.env.MAIL_PASSWORD || process.env.MAIL_PASS || '').trim().replace(/\s+/g, '');
-    const secure = process.env.MAIL_SECURE === 'true' || port === 465;
+    const isGmail = (rawHost && rawHost.toLowerCase().includes('gmail')) || (user && user.toLowerCase().endsWith('@gmail.com'));
+    const host = rawHost || (isGmail ? 'smtp.gmail.com' : '');
 
-    if (host && user && pass) {
-      this.transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure,
-        auth: {
-          user,
-          pass,
-        },
-        connectionTimeout: 10000, // 10 giây kết nối
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
-      });
+    if (user && pass && (host || isGmail)) {
+      if (isGmail) {
+        // Với Gmail trên hạ tầng Cloud (Render, AWS, GCP, v.v.):
+        // Cổng 587 STARTTLS thường bị nhà mạng hoặc tường lửa Cloud làm nghẽn/timeout sau 10s.
+        // Cổng 465 SSL trực tiếp (service: 'gmail' hoặc port 465) kết nối ngay tức thì và không bị nghẽn STARTTLS.
+        this.primaryTransporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user, pass },
+          connectionTimeout: 25000,
+          greetingTimeout: 20000,
+          socketTimeout: 30000,
+          tls: { rejectUnauthorized: false },
+        });
 
-      // Kiểm tra kết nối SMTP thực tế
-      this.transporter.verify((err) => {
+        this.fallbackTransporter = nodemailer.createTransport({
+          host: 'smtp.gmail.com',
+          port: 587,
+          secure: false,
+          auth: { user, pass },
+          connectionTimeout: 25000,
+          greetingTimeout: 20000,
+          socketTimeout: 30000,
+          tls: { rejectUnauthorized: false },
+        });
+      } else {
+        // Dịch vụ SMTP thông thường
+        const secure = process.env.MAIL_SECURE === 'true' || port === 465;
+        this.primaryTransporter = nodemailer.createTransport({
+          host,
+          port,
+          secure,
+          auth: { user, pass },
+          connectionTimeout: 25000,
+          greetingTimeout: 20000,
+          socketTimeout: 30000,
+          tls: { rejectUnauthorized: false },
+        });
+
+        const altPort = port === 465 ? 587 : 465;
+        this.fallbackTransporter = nodemailer.createTransport({
+          host,
+          port: altPort,
+          secure: altPort === 465,
+          auth: { user, pass },
+          connectionTimeout: 25000,
+          greetingTimeout: 20000,
+          socketTimeout: 30000,
+          tls: { rejectUnauthorized: false },
+        });
+      }
+
+      this.transporter = this.primaryTransporter;
+
+      // Xác minh ngầm không gây nghẽn luồng
+      this.primaryTransporter.verify((err) => {
         if (err) {
-          console.error(`[EmailService] ✗ Kết nối máy chủ SMTP ${host}:${port} thất bại:`, err.message);
+          console.warn(`[EmailService] ⚠️ Kênh SMTP chính chưa sẵn sàng (${err.message}). Đã trang bị kênh dự phòng.`);
         } else {
-          console.log(`[EmailService] ✓ Sẵn sàng gửi thư SMTP thực tế qua: ${host}:${port} (${user})`);
+          console.log(`[EmailService] ✓ Sẵn sàng gửi thư SMTP thực tế qua: ${user} (Kênh chính: SSL 465)`);
         }
       });
     } else {
+      this.primaryTransporter = null;
+      this.fallbackTransporter = null;
       this.transporter = null;
-      console.warn('⚠️ [EmailService] Chưa cấu hình SMTP thực tế trong file server/.env (MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD). Các yêu cầu gửi thư thật sẽ bị từ chối.');
+      console.warn('⚠️ [EmailService] Chưa cấu hình SMTP thực tế trong file server/.env (MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD).');
     }
   }
 
@@ -184,8 +226,8 @@ class EmailService {
    * Phương thức gửi email tổng quát
    */
   async sendMail({ to, subject, html, text }) {
-    const fromAddress = process.env.MAIL_FROM || '"LsmVoice" <Bechanhpro098@gmail.com>';
-    const user = (process.env.MAIL_USERNAME || '').trim();
+    const user = (process.env.MAIL_USERNAME || process.env.MAIL_USER || '').trim();
+    const fromAddress = process.env.MAIL_FROM || (user ? `"LsmVoice" <${user}>` : '"LsmVoice" <Bechanhpro098@gmail.com>');
     const mailOptions = {
       from: fromAddress,
       to,
@@ -202,19 +244,23 @@ class EmailService {
 
     this.lastSentEmail = { ...mailOptions, sentAt: new Date() };
 
-    if (!this.transporter) {
+    if (!this.primaryTransporter && !this.transporter) {
       this.initTransporter();
     }
 
-    if (!this.transporter) {
+    if (!this.primaryTransporter && !this.transporter) {
       const errorMsg = 'Chưa cấu hình dịch vụ gửi email SMTP thật trong file server/.env (MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD). Vui lòng cấu hình tài khoản gửi thư thật để hệ thống gửi mật khẩu.';
       console.error(`[EmailService] ✗ ${errorMsg}`);
       throw new Error(errorMsg);
     }
 
+    const primary = this.primaryTransporter || this.transporter;
+    let lastError = null;
+
+    // 1. Thử gửi qua kênh SMTP chính (ưu tiên SSL 465 để tránh timeout do Cloud firewall)
     try {
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log(`[EmailService] ✓ Email thật đã gửi thành công tới "${to}" (MessageId: ${info.messageId})`);
+      const info = await primary.sendMail(mailOptions);
+      console.log(`[EmailService] ✓ Email thật đã gửi thành công tới "${to}" qua kênh chính (MessageId: ${info.messageId})`);
       return {
         success: true,
         mock: false,
@@ -222,9 +268,29 @@ class EmailService {
         to,
       };
     } catch (err) {
-      console.error(`[EmailService] ✗ Máy chủ SMTP từ chối gửi email tới "${to}":`, err.message);
-      throw new Error(`Máy chủ SMTP từ chối gửi email tới "${to}": ${err.message}`);
+      console.warn(`[EmailService] ⚠️ Kênh SMTP chính gửi tới "${to}" gặp sự cố (${err.message}). Đang tự động chuyển sang kênh dự phòng...`);
+      lastError = err;
     }
+
+    // 2. Tự động kích hoạt kênh dự phòng nếu kênh chính gặp timeout hoặc từ chối kết nối
+    if (this.fallbackTransporter && this.fallbackTransporter !== primary) {
+      try {
+        const info = await this.fallbackTransporter.sendMail(mailOptions);
+        console.log(`[EmailService] ✓ Email thật đã gửi thành công tới "${to}" qua kênh dự phòng (MessageId: ${info.messageId})`);
+        return {
+          success: true,
+          mock: false,
+          messageId: info.messageId,
+          to,
+        };
+      } catch (fallbackErr) {
+        console.error(`[EmailService] ✗ Cả kênh chính và kênh dự phòng đều không thể gửi email tới "${to}":`, fallbackErr.message);
+        lastError = fallbackErr;
+      }
+    }
+
+    console.error(`[EmailService] ✗ Máy chủ SMTP từ chối gửi email tới "${to}":`, lastError?.message);
+    throw new Error(`Máy chủ SMTP từ chối gửi email tới "${to}": ${lastError?.message || 'Không thể kết nối đến máy chủ email'}`);
   }
 
   /**
