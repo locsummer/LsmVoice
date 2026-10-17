@@ -296,10 +296,10 @@ const handleReadSelectedOnly = () => {
         <span class="badge-primary-pill">{{ ttsStore.selectedVoice?.name || 'Hoài My' }}</span>
       </div>
 
-      <div class="d-flex align-items-center gap-2 w-100 w-sm-auto">
+      <div class="studio-bottom-btn-group">
         <button
           type="button"
-          class="btn-secondary-action flex-fill flex-sm-grow-0"
+          class="btn-secondary-action"
           :disabled="!ttsStore.text"
           @click="emit('save-library')"
         >
@@ -309,7 +309,7 @@ const handleReadSelectedOnly = () => {
 
         <button
           type="button"
-          class="btn-primary-action flex-fill flex-sm-grow-0"
+          class="btn-primary-action"
           :disabled="ttsStore.isSynthesizing || !ttsStore.text"
           @click="emit('start-synthesis')"
         >
@@ -458,6 +458,22 @@ const handleReadSelectedOnly = () => {
   .toolbar-btn {
     padding: 6px 9px !important;
     font-size: 12px !important;
+  }
+}
+
+.studio-bottom-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 576px) {
+  .studio-bottom-btn-group {
+    width: 100%;
+  }
+
+  .studio-bottom-btn-group button {
+    flex: 1 1 0;
   }
 }
 </style>

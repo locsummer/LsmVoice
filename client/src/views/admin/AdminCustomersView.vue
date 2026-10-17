@@ -308,7 +308,7 @@ const formatDate = (dateString) => {
       </div>
 
       <!-- Admin Submenu Pills (Horizontal swipe on phone) -->
-      <div class="d-flex align-items-center gap-1.5 flex-wrap admin-tabs-scroll w-100 w-md-auto">
+      <div class="d-flex align-items-center gap-1.5 flex-wrap admin-tabs-scroll">
         <router-link to="/admin/dashboard" class="admin-tab-pill">
           <i class="bi bi-speedometer2 me-1.5"></i> Tổng quan
         </router-link>

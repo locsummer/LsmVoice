@@ -396,6 +396,8 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--primary-soft);
   color: var(--primary);
   border: 1px solid var(--primary-border);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .badge-violet-pill {
@@ -408,6 +410,8 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--violet-soft);
   color: var(--violet);
   border: 1px solid var(--violet-border);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .badge-success-pill {
@@ -420,6 +424,8 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--success-soft);
   color: var(--success);
   border: 1px solid var(--success-border);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .badge-warning-pill {
