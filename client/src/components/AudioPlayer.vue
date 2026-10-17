@@ -74,29 +74,29 @@ onUnmounted(() => {
       <!-- Bảng điều khiển chính -->
       <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <!-- Cột trái: Tên tác phẩm & Tên giọng đọc -->
-        <div class="d-flex align-items-center gap-3" style="max-width: 32%;">
+        <div class="d-flex align-items-center gap-2 gap-sm-3 player-info-col">
           <div class="player-icon-box d-none d-sm-flex">
             <i class="bi bi-music-note-beamed text-primary fs-5"></i>
           </div>
           <div class="overflow-hidden">
-            <div class="fw-semibold text-main text-truncate" style="font-size: 14.5px;">
+            <div class="fw-semibold text-main text-truncate player-title">
               {{ playerStore.currentTitle || 'Văn bản audio' }}
             </div>
-            <div class="text-muted text-truncate small" style="font-size: 12px;">
+            <div class="text-muted text-truncate small" style="font-size: 11.5px;">
               {{ playerStore.currentVoiceName }}
               <span v-if="playerStore.chunks.length > 1" class="ms-1 opacity-75">
-                • Đoạn {{ playerStore.currentChunkIndex + 1 }}/{{ playerStore.chunks.length }}
+                • {{ playerStore.currentChunkIndex + 1 }}/{{ playerStore.chunks.length }}
               </span>
             </div>
           </div>
         </div>
 
         <!-- Cột giữa: Cụm điều khiển Play / Tua lùi / Tua tiến -->
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-1 gap-sm-2 player-controls-col">
           <!-- Phân đoạn trước -->
           <button
             type="button"
-            class="control-btn"
+            class="control-btn d-none d-sm-flex"
             :disabled="!playerStore.hasPrev && playerStore.currentTime <= 3"
             @click="playerStore.prevChunk"
             title="Đoạn trước"
@@ -139,7 +139,7 @@ onUnmounted(() => {
           <!-- Phân đoạn tiếp theo -->
           <button
             type="button"
-            class="control-btn"
+            class="control-btn d-none d-sm-flex"
             :disabled="!playerStore.hasNext"
             @click="playerStore.nextChunk"
             title="Đoạn tiếp theo"
@@ -334,5 +334,42 @@ onUnmounted(() => {
 .pill-option-btn:hover {
   background: var(--surface-soft);
   color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .floating-player-wrapper {
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding: 0 !important;
+  }
+
+  .ui8-player-card {
+    border-radius: 16px 16px 0 0 !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25) !important;
+    padding: 8px 12px max(8px, env(safe-area-inset-bottom)) 12px !important;
+  }
+
+  .player-info-col {
+    max-width: 44% !important;
+  }
+
+  .player-title {
+    font-size: 13.5px !important;
+  }
+
+  .control-btn {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+  }
+
+  .ui8-play-btn {
+    width: 38px !important;
+    height: 38px !important;
+  }
 }
 </style>

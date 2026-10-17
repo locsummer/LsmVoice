@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useThemeStore } from '../stores/themeStore.js';
 import { useAuthStore } from '../stores/authStore.js';
@@ -11,6 +11,11 @@ const themeStore = useThemeStore();
 const authStore = useAuthStore();
 
 const isDark = computed(() => themeStore.currentTheme === 'dark');
+const isMobileMenuOpen = ref(false);
+
+watch(() => route.path, () => {
+  isMobileMenuOpen.value = false;
+});
 
 const navLinks = computed(() => {
   const links = [
@@ -145,34 +150,130 @@ const navLinks = computed(() => {
             <span>Đăng nhập</span>
           </button>
 
-          <!-- Mobile Menu Drawer Toggle -->
-          <div class="dropdown d-lg-none">
+            <!-- Mobile Menu Hamburger Button -->
             <button
-              class="theme-toggle-btn"
+              class="theme-toggle-btn d-lg-none"
               type="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
+              @click="isMobileMenuOpen = !isMobileMenuOpen"
+              aria-label="Mở menu điều hướng"
             >
-              <i class="bi bi-list fs-5"></i>
+              <i class="bi" :class="isMobileMenuOpen ? 'bi-x-lg' : 'bi-list fs-5'"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm border hairline-border p-2" style="border-radius: var(--radius-md); min-width: 200px;">
-              <li v-for="link in navLinks" :key="link.path">
-                <router-link
-                  :to="link.path"
-                  class="dropdown-item small py-2 rounded-2"
-                  :class="{ 'fw-bold text-primary bg-primary-subtle': route.path === link.path || (link.isAdmin && route.path.startsWith('/admin')) }"
-                >
-                  <i class="bi me-2" :class="link.icon"></i>
-                  {{ link.label }}
-                </router-link>
-              </li>
-            </ul>
           </div>
         </div>
       </div>
-    </div>
-  </header>
-</template>
+    </header>
+
+    <!-- Mobile Drawer Backdrop -->
+    <transition name="fade">
+      <div
+        v-if="isMobileMenuOpen"
+        class="mobile-drawer-backdrop d-lg-none"
+        @click="isMobileMenuOpen = false"
+      ></div>
+    </transition>
+
+    <!-- Mobile Drawer Sidebar -->
+    <transition name="slide-drawer">
+      <div v-if="isMobileMenuOpen" class="mobile-drawer-panel d-lg-none">
+        <!-- Header of Drawer -->
+        <div class="d-flex align-items-center justify-content-between p-3 hairline-border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="logo-box" style="width: 32px; height: 32px;">
+              <i class="bi bi-soundwave text-white small"></i>
+            </div>
+            <span class="logo-title" style="font-size: 16.5px;">LsmVoice</span>
+            <span class="badge-tag">Mobile</span>
+          </div>
+          <button
+            type="button"
+            class="theme-toggle-btn"
+            @click="isMobileMenuOpen = false"
+            aria-label="Đóng menu"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- User Profile Card in Drawer -->
+        <div class="p-3 hairline-border-bottom" style="background: var(--surface-soft);">
+          <div v-if="authStore.isAuthenticated" class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2.5 overflow-hidden">
+              <div class="user-avatar-sm" style="width: 38px; height: 38px; font-size: 14px;">
+                {{ (authStore.user?.fullName || authStore.user?.username || 'U').charAt(0).toUpperCase() }}
+              </div>
+              <div class="overflow-hidden">
+                <div class="fw-semibold text-main small text-truncate">
+                  {{ authStore.user?.fullName || authStore.user?.username }}
+                </div>
+                <div class="text-muted small text-truncate" style="font-size: 11px;">
+                  @{{ authStore.user?.username }}
+                </div>
+              </div>
+            </div>
+            <span class="badge" :class="authStore.isAdmin ? 'badge-admin-tag' : 'badge-neutral'">
+              {{ authStore.isAdmin ? 'Admin' : 'Thành viên' }}
+            </span>
+          </div>
+          <div v-else>
+            <button
+              type="button"
+              class="btn-primary-action w-100"
+              style="height: 42px;"
+              @click="emit('open-auth'); isMobileMenuOpen = false;"
+            >
+              <i class="bi bi-person me-1"></i>
+              <span>Đăng nhập / Đăng ký</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation Links List (Touch friendly) -->
+        <div class="p-2 flex-grow-1 overflow-y-auto">
+          <div class="text-muted text-uppercase px-3 py-2 fw-bold" style="font-size: 11px; letter-spacing: 0.05em;">
+            Danh mục tính năng
+          </div>
+          <router-link
+            v-for="link in navLinks"
+            :key="link.path"
+            :to="link.path"
+            class="mobile-nav-item"
+            :class="{ active: route.path === link.path || (link.isAdmin && route.path.startsWith('/admin')) }"
+            @click="isMobileMenuOpen = false"
+          >
+            <i class="bi me-2.5 fs-5" :class="link.icon"></i>
+            <span class="fw-medium">{{ link.label }}</span>
+            <span v-if="link.isAdmin" class="badge-admin-tag ms-2" style="font-size: 10px;">Admin</span>
+            <i class="bi bi-chevron-right ms-auto opacity-50 small"></i>
+          </router-link>
+        </div>
+
+        <!-- Bottom Drawer Actions -->
+        <div class="p-3 hairline-border-top d-flex align-items-center justify-content-between gap-2" style="background: var(--surface);">
+          <button
+            type="button"
+            class="btn-secondary-action flex-fill"
+            style="height: 40px; font-size: 13px;"
+            @click="themeStore.toggleTheme"
+          >
+            <i class="bi me-1.5" :class="isDark ? 'bi-moon-fill' : 'bi-sun-fill'"></i>
+            <span>{{ isDark ? 'Giao diện Tối' : 'Giao diện Sáng' }}</span>
+          </button>
+
+          <button
+            v-if="authStore.isAuthenticated"
+            type="button"
+            class="btn-danger-action"
+            style="height: 40px; width: 44px; padding: 0;"
+            @click="authStore.logout(); isMobileMenuOpen = false;"
+            title="Đăng xuất"
+          >
+            <i class="bi bi-box-arrow-right fs-6"></i>
+          </button>
+        </div>
+      </div>
+    </transition>
+  </template>
 
 <style scoped>
 .ui8-header {
@@ -326,5 +427,68 @@ const navLinks = computed(() => {
   background: var(--surface-hover);
   border-color: var(--primary);
   color: var(--primary);
+}
+
+/* --- Mobile Drawer Specific Styles --- */
+.mobile-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 13, 20, 0.65);
+  backdrop-filter: blur(5px);
+  z-index: 1050;
+}
+
+.mobile-drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 84%;
+  max-width: 320px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-float);
+  z-index: 1060;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14.5px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav-item:hover,
+.mobile-nav-item.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.slide-drawer-enter-active,
+.slide-drawer-leave-active {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-drawer-enter-from,
+.slide-drawer-leave-to {
+  transform: translateX(100%);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

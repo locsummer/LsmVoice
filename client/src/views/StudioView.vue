@@ -68,12 +68,12 @@ const handleOpenSaveModal = () => {
 </script>
 
 <template>
-  <div class="container-fluid px-3 px-lg-4 py-4" style="max-width: 1480px;">
+  <div class="container-fluid px-2 px-sm-3 px-lg-4 py-3 py-lg-4" style="max-width: 1480px;">
     <!-- Hero Section (UI8 Modern Dashboard style) -->
-    <div class="hero-container mb-4 p-4 p-md-4 rounded-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+    <div class="hero-container mb-3 mb-md-4 p-3 p-sm-4 rounded-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
       <div>
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-          <h1 class="page-title mb-0">Biến văn bản thành giọng nói.</h1>
+          <h1 class="page-title mb-0" style="font-size: clamp(20px, 4vw, 26px);">Biến văn bản thành giọng nói.</h1>
           <span class="badge-violet-pill">
             <i class="bi bi-shield-check me-1"></i> Hỗ trợ tối đa 50.000 ký tự
           </span>
@@ -84,10 +84,10 @@ const handleOpenSaveModal = () => {
       </div>
 
       <!-- Action Buttons in Hero -->
-      <div class="d-flex align-items-center gap-2 flex-shrink-0">
+      <div class="d-flex align-items-center gap-2 flex-wrap flex-sm-nowrap w-100 w-lg-auto flex-shrink-0">
         <button
           type="button"
-          class="btn-secondary-action"
+          class="btn-secondary-action flex-fill flex-lg-grow-0"
           @click="handleOpenSaveModal"
         >
           <i class="bi bi-bookmark-plus"></i>
@@ -96,7 +96,7 @@ const handleOpenSaveModal = () => {
 
         <button
           type="button"
-          class="btn-primary-action"
+          class="btn-primary-action flex-fill flex-lg-grow-0"
           :disabled="ttsStore.isSynthesizing"
           @click="handleStartSynthesis"
         >
@@ -108,7 +108,7 @@ const handleOpenSaveModal = () => {
     </div>
 
     <!-- Main Dashboard Workspace (60% / 40%) -->
-    <div class="row g-4 align-items-start">
+    <div class="row g-3 g-lg-4 align-items-start">
       <!-- Cột trái: Soạn thảo văn bản (~60%) -->
       <div class="col-lg-7 d-flex flex-column gap-4">
         <TextInputArea

@@ -137,8 +137,8 @@ const getAreaPoints = (items, maxVal, width = 600, height = 180) => {
         </span>
       </div>
 
-      <!-- Admin Submenu Pills -->
-      <div class="d-flex align-items-center gap-1.5 flex-wrap">
+      <!-- Admin Submenu Pills (Horizontal swipe on phone) -->
+      <div class="d-flex align-items-center gap-1.5 flex-wrap admin-tabs-scroll w-100 w-md-auto">
         <router-link to="/admin/dashboard" class="admin-tab-pill active">
           <i class="bi bi-speedometer2 me-1.5"></i> Tổng quan
         </router-link>

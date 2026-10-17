@@ -161,9 +161,9 @@ const handleReadSelectedOnly = () => {
 </script>
 
 <template>
-  <div class="panel-white p-4 d-flex flex-column" style="min-height: 560px;">
+  <div class="panel-white p-3 p-sm-4 d-flex flex-column studio-text-panel">
     <!-- Phần trên: Tiêu đề tác phẩm & Trạng thái lưu nháp -->
-    <div class="d-flex align-items-center justify-content-between gap-3 pb-3 mb-3 hairline-border-bottom">
+    <div class="d-flex align-items-center justify-content-between gap-2 pb-2.5 mb-3 hairline-border-bottom">
       <div class="flex-grow-1">
         <input
           v-model="ttsStore.title"
@@ -176,13 +176,13 @@ const handleReadSelectedOnly = () => {
 
       <div class="d-flex align-items-center gap-1 flex-shrink-0 text-muted small">
         <i class="bi" :class="ttsStore.isDraftSaved ? 'bi-cloud-check text-success' : 'bi-arrow-repeat spin'"></i>
-        <span style="font-size: 12.5px;">{{ ttsStore.isDraftSaved ? 'Đã lưu nháp' : 'Đang lưu...' }}</span>
+        <span class="d-none d-sm-inline" style="font-size: 12.5px;">{{ ttsStore.isDraftSaved ? 'Đã lưu nháp' : 'Đang lưu...' }}</span>
       </div>
     </div>
 
     <!-- Thanh công cụ nhỏ gọn (UI8 Toolbar) -->
-    <div class="toolbar-container d-flex flex-wrap align-items-center justify-content-between gap-2 p-2 mb-3 rounded-3">
-      <div class="d-flex align-items-center gap-1">
+    <div class="toolbar-container d-flex align-items-center justify-content-between gap-1 gap-sm-2 p-1.5 p-sm-2 mb-3 rounded-3">
+      <div class="d-flex align-items-center gap-1 overflow-x-auto toolbar-scrollable">
         <button
           type="button"
           class="toolbar-btn"
@@ -290,32 +290,32 @@ const handleReadSelectedOnly = () => {
     </div>
 
     <!-- Hàng nút hành động -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pt-2 hairline-border-top">
-      <div class="d-flex align-items-center gap-2 small">
-        <span class="text-muted">Giọng đang chọn:</span>
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2.5 pt-2 hairline-border-top">
+      <div class="d-flex align-items-center gap-1.5 small">
+        <span class="text-muted" style="font-size: 12px;">Giọng:</span>
         <span class="badge-primary-pill">{{ ttsStore.selectedVoice?.name || 'Hoài My' }}</span>
       </div>
 
-      <div class="d-flex align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2 w-100 w-sm-auto">
         <button
           type="button"
-          class="btn-secondary-action"
+          class="btn-secondary-action flex-fill flex-sm-grow-0"
           :disabled="!ttsStore.text"
           @click="emit('save-library')"
         >
           <i class="bi bi-bookmark-plus"></i>
-          <span>Lưu thư viện</span>
+          <span>Lưu</span>
         </button>
 
         <button
           type="button"
-          class="btn-primary-action"
+          class="btn-primary-action flex-fill flex-sm-grow-0"
           :disabled="ttsStore.isSynthesizing || !ttsStore.text"
           @click="emit('start-synthesis')"
         >
           <span v-if="ttsStore.isSynthesizing" class="spinner-border spinner-border-sm me-2"></span>
           <i v-else class="bi bi-play-circle-fill"></i>
-          <span>Chuyển thành giọng nói</span>
+          <span>Tạo giọng nói</span>
         </button>
       </div>
     </div>
@@ -429,5 +429,35 @@ const handleReadSelectedOnly = () => {
 
 .progress-danger {
   background: var(--danger);
+}
+
+.studio-text-panel {
+  min-height: 540px;
+}
+
+.toolbar-scrollable::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .studio-text-panel {
+    min-height: 380px;
+  }
+
+  .title-input {
+    font-size: 1.15rem !important;
+  }
+
+  .ui8-textarea {
+    min-height: 220px !important;
+    padding: 12px 14px !important;
+    font-size: 16px !important; /* Ngăn iOS Safari tự zoom in */
+    line-height: 1.65;
+  }
+
+  .toolbar-btn {
+    padding: 6px 9px !important;
+    font-size: 12px !important;
+  }
 }
 </style>

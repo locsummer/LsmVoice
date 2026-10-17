@@ -7,10 +7,12 @@ import AuthModal from './components/AuthModal.vue';
 import AudioExporter from './components/AudioExporter.vue';
 import { useAuthStore } from './stores/authStore.js';
 import { useTtsStore } from './stores/ttsStore.js';
+import { usePlayerStore } from './stores/playerStore.js';
 import { useNotificationStore } from './stores/notificationStore.js';
 
 const authStore = useAuthStore();
 const ttsStore = useTtsStore();
+const playerStore = usePlayerStore();
 const notification = useNotificationStore();
 
 const showAuthModal = ref(false);
@@ -42,7 +44,7 @@ onMounted(() => {
     <Navbar @open-auth="showAuthModal = true" />
 
     <!-- Nội dung chính của từng trang -->
-    <main class="flex-grow-1">
+    <main class="flex-grow-1" :class="{ 'has-player-active': !!playerStore.currentAudioUrl }">
       <router-view @notify="handleNotify" @open-auth="showAuthModal = true" />
     </main>
 

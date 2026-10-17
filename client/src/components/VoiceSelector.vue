@@ -57,7 +57,7 @@ const handlePreview = async (voice, event) => {
 <template>
   <div class="d-flex flex-column gap-3">
     <!-- Panel 1: Danh sách giọng đọc cao cấp (UI8 White Panel) -->
-    <div class="panel-white p-4 d-flex flex-column" style="min-height: 480px;">
+    <div class="panel-white p-3 p-sm-4 d-flex flex-column voice-selector-panel">
       <!-- Header của Panel -->
       <div class="d-flex align-items-center justify-content-between mb-2">
         <h2 class="section-title mb-0">Chọn giọng đọc</h2>
@@ -304,5 +304,29 @@ const handlePreview = async (voice, event) => {
   background: var(--surface-soft);
   color: var(--primary);
   border-color: var(--primary-border);
+}
+
+.voice-selector-panel {
+  min-height: 480px;
+}
+
+@media (max-width: 768px) {
+  .voice-selector-panel {
+    min-height: auto;
+  }
+
+  .filter-select {
+    font-size: 11.5px !important;
+    padding: 5px 6px !important;
+  }
+
+  .voice-desc {
+    max-width: 170px !important;
+    font-size: 12px !important;
+  }
+
+  .voice-card {
+    padding: 10px 12px !important;
+  }
 }
 </style>
