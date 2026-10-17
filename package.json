@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "LsmVoice - Chuyển văn bản thành giọng nói tiếng Việt chuyên nghiệp",
   "scripts": {
+    "build": "npm run install:all && npm run client:build",
+    "start": "cd server && node src/index.js",
     "install:all": "npm install && cd server && npm install && cd ../client && npm install",
     "dev": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan.bold,green.bold\" \"npm run server:dev\" \"npm run client:dev\"",
     "server:dev": "cd server && npm run dev",
