@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#grad)" />
+  <!-- Soundwave / Headphone icon -->
+  <path d="M 16 32 C 16 22 23 14 32 14 C 41 14 48 22 48 32" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" />
+  <rect x="12" y="30" width="8" height="16" rx="4" fill="#ffffff" />
+  <rect x="44" y="30" width="8" height="16" rx="4" fill="#ffffff" />
+  <line x1="26" y1="28" x2="26" y2="40" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+  <line x1="32" y1="23" x2="32" y2="45" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" />
+  <line x1="38" y1="28" x2="38" y2="40" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+</svg>

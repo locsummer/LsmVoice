@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+package-lock.json.bak
+
+# Environment variables & secrets (CRITICAL: Do not commit real passwords/keys)
+.env
+.env.local
+.env.*.local
+server/.env
+client/.env
+
+# Build outputs
+client/dist/
+dist/
+
+# SQLite databases & temp journals
+server/storage/*.sqlite
+server/storage/*.sqlite-journal
+server/storage/*.sqlite-wal
+server/storage/*.sqlite-shm
+*.sqlite
+
+# Generated audio files & uploaded temporary docs
+server/storage/audio/*
+!server/storage/audio/.gitkeep
+server/storage/uploads/*
+!server/storage/uploads/.gitkeep
+
+# Logs & debug files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

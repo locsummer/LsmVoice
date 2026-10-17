@@ -1,0 +1,27 @@
+{
+  "name": "lsm-voice",
+  "version": "1.0.0",
+  "description": "LsmVoice - Chuyển văn bản thành giọng nói tiếng Việt chuyên nghiệp",
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan.bold,green.bold\" \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "cd server && npm run dev",
+    "client:dev": "cd client && npm run dev",
+    "server:start": "cd server && npm start",
+    "client:build": "cd client && npm run build",
+    "test": "cd server && npm test"
+  },
+  "keywords": [
+    "text-to-speech",
+    "tts",
+    "vietnamese-tts",
+    "voice-audio",
+    "vue3",
+    "express"
+  ],
+  "author": "LsmVoice Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
