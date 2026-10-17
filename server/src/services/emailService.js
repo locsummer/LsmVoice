@@ -36,9 +36,9 @@ class EmailService {
         this.primaryTransporter = nodemailer.createTransport({
           service: 'gmail',
           auth: { user, pass },
-          connectionTimeout: 25000,
-          greetingTimeout: 20000,
-          socketTimeout: 30000,
+          connectionTimeout: 4000,
+          greetingTimeout: 4000,
+          socketTimeout: 5000,
           tls: { rejectUnauthorized: false },
         });
 
@@ -47,9 +47,9 @@ class EmailService {
           port: 587,
           secure: false,
           auth: { user, pass },
-          connectionTimeout: 25000,
-          greetingTimeout: 20000,
-          socketTimeout: 30000,
+          connectionTimeout: 4000,
+          greetingTimeout: 4000,
+          socketTimeout: 5000,
           tls: { rejectUnauthorized: false },
         });
       } else {
@@ -60,9 +60,9 @@ class EmailService {
           port,
           secure,
           auth: { user, pass },
-          connectionTimeout: 25000,
-          greetingTimeout: 20000,
-          socketTimeout: 30000,
+          connectionTimeout: 4000,
+          greetingTimeout: 4000,
+          socketTimeout: 5000,
           tls: { rejectUnauthorized: false },
         });
 
@@ -72,9 +72,9 @@ class EmailService {
           port: altPort,
           secure: altPort === 465,
           auth: { user, pass },
-          connectionTimeout: 25000,
-          greetingTimeout: 20000,
-          socketTimeout: 30000,
+          connectionTimeout: 4000,
+          greetingTimeout: 4000,
+          socketTimeout: 5000,
           tls: { rejectUnauthorized: false },
         });
       }
@@ -223,7 +223,89 @@ class EmailService {
   }
 
   /**
-   * Phương thức gửi email tổng quát
+   * 0. Gửi email qua Brevo REST API (HTTPS Port 443 - Không bao giờ bị chặn trên Render Free Tier)
+   */
+  async sendViaBrevo({ to, subject, html, text }) {
+    const apiKey = (process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY || '').trim();
+    if (!apiKey) return null;
+
+    const user = (process.env.MAIL_USERNAME || '').trim();
+    const senderEmail = (process.env.BREVO_SENDER || user || 'Bechanhpro098@gmail.com').trim();
+    const senderName = process.env.MAIL_FROM_NAME || 'LsmVoice';
+
+    const payload = {
+      sender: { name: senderName, email: senderEmail },
+      to: [{ email: to }],
+      subject: subject.startsWith('[LsmVoice]') ? subject : `[LsmVoice] ${subject}`,
+      htmlContent: html,
+      textContent: text || subject,
+    };
+
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || `Brevo API HTTP ${response.status}`);
+    }
+
+    console.log(`[EmailService] ✓ Gửi email thành công qua Brevo HTTPS API tới "${to}" (MessageId: ${data.messageId})`);
+    return {
+      success: true,
+      provider: 'brevo_https',
+      messageId: data.messageId,
+      to,
+    };
+  }
+
+  /**
+   * 0.1 Gửi email qua Resend REST API (HTTPS Port 443)
+   */
+  async sendViaResend({ to, subject, html, text }) {
+    const apiKey = (process.env.RESEND_API_KEY || '').trim();
+    if (!apiKey) return null;
+
+    const fromAddress = process.env.RESEND_FROM || process.env.MAIL_FROM || 'LsmVoice <onboarding@resend.dev>';
+    const payload = {
+      from: fromAddress,
+      to: [to],
+      subject: subject.startsWith('[LsmVoice]') ? subject : `[LsmVoice] ${subject}`,
+      html,
+      text: text || subject,
+    };
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || `Resend API HTTP ${response.status}`);
+    }
+
+    console.log(`[EmailService] ✓ Gửi email thành công qua Resend HTTPS API tới "${to}" (ID: ${data.id})`);
+    return {
+      success: true,
+      provider: 'resend_https',
+      messageId: data.id,
+      to,
+    };
+  }
+
+  /**
+   * Phương thức gửi email tổng quát (Tự động ưu tiên HTTPS API trước khi fallback sang SMTP)
    */
   async sendMail({ to, subject, html, text }) {
     const user = (process.env.MAIL_USERNAME || process.env.MAIL_USER || '').trim();
@@ -244,12 +326,32 @@ class EmailService {
 
     this.lastSentEmail = { ...mailOptions, sentAt: new Date() };
 
+    // 1. Ưu tiên kiểm tra và gửi qua Brevo / Resend Web API (HTTPS Cổng 443 - Không bao giờ bị chặn trên Render Free Tier)
+    if (process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY) {
+      try {
+        const res = await this.sendViaBrevo({ to, subject, html, text });
+        if (res) return res;
+      } catch (brevoErr) {
+        console.warn(`[EmailService] ⚠️ Kênh Brevo HTTPS API gặp lỗi (${brevoErr.message}). Đang chuyển tiếp sang các kênh khác...`);
+      }
+    }
+
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const res = await this.sendViaResend({ to, subject, html, text });
+        if (res) return res;
+      } catch (resendErr) {
+        console.warn(`[EmailService] ⚠️ Kênh Resend HTTPS API gặp lỗi (${resendErr.message}). Đang chuyển tiếp sang các kênh khác...`);
+      }
+    }
+
+    // 2. Kênh SMTP truyền thống (Cổng 465 SSL hoặc Cổng 587)
     if (!this.primaryTransporter && !this.transporter) {
       this.initTransporter();
     }
 
     if (!this.primaryTransporter && !this.transporter) {
-      const errorMsg = 'Chưa cấu hình dịch vụ gửi email SMTP thật trong file server/.env (MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD). Vui lòng cấu hình tài khoản gửi thư thật để hệ thống gửi mật khẩu.';
+      const errorMsg = 'Chưa cấu hình dịch vụ gửi email (BREVO_API_KEY hoặc SMTP trong file .env). Vui lòng cấu hình để hệ thống gửi mật khẩu.';
       console.error(`[EmailService] ✗ ${errorMsg}`);
       throw new Error(errorMsg);
     }
@@ -257,7 +359,7 @@ class EmailService {
     const primary = this.primaryTransporter || this.transporter;
     let lastError = null;
 
-    // 1. Thử gửi qua kênh SMTP chính (ưu tiên SSL 465 để tránh timeout do Cloud firewall)
+    // 2.1 Thử gửi qua kênh SMTP chính (ưu tiên SSL 465)
     try {
       const info = await primary.sendMail(mailOptions);
       console.log(`[EmailService] ✓ Email thật đã gửi thành công tới "${to}" qua kênh chính (MessageId: ${info.messageId})`);
@@ -272,7 +374,7 @@ class EmailService {
       lastError = err;
     }
 
-    // 2. Tự động kích hoạt kênh dự phòng nếu kênh chính gặp timeout hoặc từ chối kết nối
+    // 2.2 Tự động kích hoạt kênh dự phòng nếu kênh chính gặp timeout hoặc từ chối kết nối
     if (this.fallbackTransporter && this.fallbackTransporter !== primary) {
       try {
         const info = await this.fallbackTransporter.sendMail(mailOptions);

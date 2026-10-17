@@ -86,23 +86,19 @@ export const register = async (req, res, next) => {
     );
 
     // Gửi email thật chứa thông tin tài khoản và mật khẩu ban đầu
-    try {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      await emailService.sendAccountWelcomeEmail({
-        email: cleanEmail,
-        username: cleanUsername,
-        initialPassword,
-        loginUrl: frontendUrl,
-      });
-    } catch (emailErr) {
-      // Nếu gửi email thất bại: XÓA tài khoản vừa tạo để không để lại tài khoản rác chưa nhận được mật khẩu
-      await dbRun(`DELETE FROM users WHERE id = ?`, [userId]);
-      console.error('[AUTH REGISTER] Lỗi gửi email thật:', emailErr.message);
-      return res.status(502).json({
-        success: false,
-        message: `Gửi email kích hoạt tài khoản thất bại: ${emailErr.message}. Tài khoản chưa được tạo để bạn có thể thử lại an toàn sau khi cấu hình SMTP.`,
-      });
-    }
+    // Chạy ngầm (asynchronous) để phản hồi ngay lập tức cho người dùng (<100ms),
+    // ngăn ngừa triệt để lỗi timeout (ECONNABORTED) do mạng Cloud trễ
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    emailService.sendAccountWelcomeEmail({
+      email: cleanEmail,
+      username: cleanUsername,
+      initialPassword,
+      loginUrl: frontendUrl,
+    }).then(() => {
+      console.log(`[AUTH REGISTER] ✓ Đã gửi email kích hoạt tài khoản thành công tới ${cleanEmail}`);
+    }).catch((emailErr) => {
+      console.warn(`[AUTH REGISTER] ⚠️ Gửi email kích hoạt tới ${cleanEmail} gặp sự cố mạng nền:`, emailErr.message);
+    });
 
     // Ghi nhận ngay sự kiện vào Nhật ký kiểm toán Quản trị (Admin Audit Logs)
     try {
