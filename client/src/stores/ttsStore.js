@@ -161,26 +161,50 @@ export const useTtsStore = defineStore('tts', () => {
   };
 
   /**
-   * Nghe thử mẫu giọng đọc
+   * Nghe thử mẫu giọng đọc (Có bộ nhớ đệm cache để phát ngay tức thì khi chuyển đổi qua lại)
    */
+  const previewCache = new Map();
   const playPreview = async (voice) => {
+    const isCurrentlyPlayingThis = previewVoiceId.value === voice.id;
     if (previewAudio.value) {
       previewAudio.value.pause();
       previewAudio.value = null;
     }
 
+    if (isCurrentlyPlayingThis) {
+      previewVoiceId.value = null;
+      return;
+    }
+
     previewVoiceId.value = voice.id;
-    isPreviewLoading.value = true;
 
-    try {
-      const res = await previewVoice({
-        voiceId: voice.id,
-        text: voice.sampleText,
-        speed: speed.value,
-        pitch: pitch.value,
-      });
+    const cacheKey = `${voice.id}-${speed.value}-${pitch.value}`;
+    let audioUrl = previewCache.get(cacheKey);
 
-      const audio = new Audio(res.data.audioUrl);
+    if (!audioUrl) {
+      isPreviewLoading.value = true;
+      try {
+        const res = await previewVoice({
+          voiceId: voice.id,
+          text: voice.sampleText,
+          speed: speed.value,
+          pitch: pitch.value,
+        });
+        audioUrl = res.data?.audioUrl;
+        if (audioUrl) {
+          previewCache.set(cacheKey, audioUrl);
+        }
+      } catch (err) {
+        console.error('Không thể phát thử giọng đọc:', err);
+        previewVoiceId.value = null;
+        throw err;
+      } finally {
+        isPreviewLoading.value = false;
+      }
+    }
+
+    if (audioUrl) {
+      const audio = new Audio(audioUrl);
       previewAudio.value = audio;
       audio.onended = () => {
         previewVoiceId.value = null;
@@ -188,13 +212,11 @@ export const useTtsStore = defineStore('tts', () => {
       audio.onerror = () => {
         previewVoiceId.value = null;
       };
-      await audio.play();
-    } catch (err) {
-      console.error('Không thể phát thử giọng đọc:', err);
-      previewVoiceId.value = null;
-      throw err;
-    } finally {
-      isPreviewLoading.value = false;
+      try {
+        await audio.play();
+      } catch (_) {
+        previewVoiceId.value = null;
+      }
     }
   };
 

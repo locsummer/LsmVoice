@@ -55,7 +55,7 @@ const limiter = rateLimit({
   legacyHeaders: false,
   message: {
     success: false,
-    message: 'Bạn đã gửi quá nhiều yêu cầu trong thời gian ngắn. Vui lòng thử lại sau 15 phút.',
+    message: 'Bạn đã gửi quá nhiều yêu cầu trong thời gian ngắn. Vui lòng thử lại sau 30 giây.',
   },
 });
 app.use('/api', limiter);

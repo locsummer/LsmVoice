@@ -316,7 +316,17 @@ export const usePlayerStore = defineStore('player', () => {
     }
   };
 
+  const closePlayer = () => {
+    pause();
+    currentAudioUrl.value = '';
+    currentTitle.value = '';
+    chunks.value = [];
+    currentTime.value = 0;
+    duration.value = 0;
+  };
+
   return {
+    closePlayer,
     isPlaying,
     isLoading,
     hasError,

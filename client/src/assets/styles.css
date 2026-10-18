@@ -703,6 +703,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ==========================================================================
+   Persistent Floating Player Safe Spacing
+   Đảm bảo toàn bộ nội dung trang (Bảng danh sách, thư viện, lịch sử, phòng thu...)
+   không bao giờ bị Audio Player che khuất ở chân trang trên cả Desktop, Tablet & Mobile
+   ========================================================================== */
+
+main.has-player-active {
+  padding-bottom: 130px !important;
+}
+
+/* ==========================================================================
    Mobile Responsive Framework (< 768px / Smartphones)
    ========================================================================== */
 
@@ -810,9 +820,9 @@ html, body {
     border-radius: var(--radius-lg) !important;
   }
 
-  /* Đảm bảo nội dung không bị Player che khuất ở chân trang */
+  /* Đảm bảo nội dung không bị Player che khuất ở chân trang trên điện thoại */
   main.has-player-active {
-    padding-bottom: 105px !important;
+    padding-bottom: 110px !important;
   }
 
   /* Toast thông báo hiển thị vừa vặn trên điện thoại */

@@ -205,6 +205,17 @@ onUnmounted(() => {
             <i class="bi bi-download"></i>
             <span class="d-none d-sm-inline">Tải về</span>
           </button>
+
+          <!-- Nút Đóng Player -->
+          <button
+            type="button"
+            class="control-btn"
+            style="width: 34px; height: 34px;"
+            @click="playerStore.closePlayer()"
+            title="Đóng trình phát âm thanh"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
       </div>
     </div>

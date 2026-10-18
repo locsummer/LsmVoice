@@ -87,6 +87,20 @@ const forgotErrors = reactive({
 });
 
 const isSubmitting = ref(false);
+const resendCooldown = ref(0);
+let resendTimer = null;
+
+const startResendCooldown = (seconds = 30) => {
+  clearInterval(resendTimer);
+  resendCooldown.value = seconds;
+  resendTimer = setInterval(() => {
+    if (resendCooldown.value > 0) {
+      resendCooldown.value--;
+    } else {
+      clearInterval(resendTimer);
+    }
+  }, 1000);
+};
 
 const startOtpTimer = () => {
   clearInterval(countdownTimer);
@@ -98,6 +112,7 @@ const startOtpTimer = () => {
       clearInterval(countdownTimer);
     }
   }, 1000);
+  startResendCooldown(30); // Giới hạn đúng 30 giây gửi lại mã theo yêu cầu người dùng
 };
 
 const formatTime = (seconds) => {
@@ -108,6 +123,7 @@ const formatTime = (seconds) => {
 
 onUnmounted(() => {
   clearInterval(countdownTimer);
+  clearInterval(resendTimer);
 });
 
 const validateEmail = (email) => {
@@ -721,10 +737,11 @@ const handleConfirmReset = async () => {
                   <button
                     type="button"
                     class="btn btn-link p-0 small text-decoration-none"
-                    :disabled="otpCountdown > 240 || isSubmitting"
+                    :disabled="resendCooldown > 0 || isSubmitting"
                     @click="handleRequestLoginOtp"
                   >
-                    Gửi lại mã OTP
+                    <span v-if="resendCooldown > 0">Gửi lại mã (sau {{ resendCooldown }}s)</span>
+                    <span v-else>Gửi lại mã OTP</span>
                   </button>
                 </div>
 
@@ -1044,6 +1061,19 @@ const handleConfirmReset = async () => {
                 <div v-if="forgotErrors.confirmPassword" class="field-error-text">
                   {{ forgotErrors.confirmPassword }}
                 </div>
+              </div>
+
+              <div class="d-flex align-items-center justify-content-between small text-muted mb-4">
+                <span>Mã hết hạn sau: <strong class="text-primary">{{ formatTime(otpCountdown) }}</strong></span>
+                <button
+                  type="button"
+                  class="btn btn-link p-0 small text-decoration-none"
+                  :disabled="resendCooldown > 0 || isSubmitting"
+                  @click="handleRequestResetOtp"
+                >
+                  <span v-if="resendCooldown > 0">Gửi lại mã (sau {{ resendCooldown }}s)</span>
+                  <span v-else>Gửi lại mã khôi phục</span>
+                </button>
               </div>
 
               <button
