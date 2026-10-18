@@ -100,6 +100,8 @@ export const adminRevokeCustomerSessions = (id) => api.post(`/admin/customers/${
 export const adminResendCustomerVerification = (id) => api.post(`/admin/customers/${id}/resend-verification`);
 export const adminGetLoginEvents = (params) => api.get('/admin/login-events', { params });
 export const adminGetAuditLogs = (params) => api.get('/admin/audit-logs', { params });
+export const adminExportBackup = () => api.get('/admin/backup/export');
+export const adminImportBackup = (backup) => api.post('/admin/backup/import', { backup });
 
 // --- Audio Download Helper ---
 export const getAudioDownloadUrl = (filename, title = '') => {

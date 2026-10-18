@@ -1,11 +1,20 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { adminGetDashboardSummary, adminGetDashboardCharts } from '../../services/api.js';
+import {
+  adminGetDashboardSummary,
+  adminGetDashboardCharts,
+  adminExportBackup,
+  adminImportBackup,
+} from '../../services/api.js';
 import { useNotificationStore } from '../../stores/notificationStore.js';
 
 const notification = useNotificationStore();
 
 const isLoading = ref(true);
+const isExporting = ref(false);
+const isImporting = ref(false);
+const restoreFileInput = ref(null);
+
 const summary = ref({
   totalUsers: 0,
   verifiedEmailUsers: 0,
@@ -19,6 +28,7 @@ const summary = ref({
   lockedUsers: 0,
   totalAudioJobs: 0,
   totalLibraryItems: 0,
+  isUsingTurso: false,
 });
 
 const chartDays = ref(7);
@@ -93,6 +103,43 @@ const loginSuccessRate = computed(() => {
   return Math.round((summary.value.totalLoginsSuccess / total) * 100);
 });
 
+// Tính toán số lượng và tỉ lệ phần trăm vai trò thực tế
+const adminCount = computed(() => {
+  const item = chartData.value.roles?.find((r) => r.role === 'admin');
+  if (item) return Number(item.count);
+  return summary.value.totalUsers > 0 ? 1 : 0;
+});
+
+const userCount = computed(() => {
+  const item = chartData.value.roles?.find((r) => r.role === 'user');
+  if (item) return Number(item.count);
+  return Math.max(0, (summary.value.totalUsers || 0) - adminCount.value);
+});
+
+const totalRoleUsers = computed(() => {
+  const sum = userCount.value + adminCount.value;
+  return sum > 0 ? sum : Math.max(summary.value.totalUsers || 0, 1);
+});
+
+const userRolePercentage = computed(() => {
+  if (userCount.value === 0) return 0;
+  return Math.round((userCount.value / totalRoleUsers.value) * 100);
+});
+
+const adminRolePercentage = computed(() => {
+  if (adminCount.value === 0) return 0;
+  return Math.round((adminCount.value / totalRoleUsers.value) * 100);
+});
+
+const unverifiedEmailUsers = computed(() => {
+  return Math.max(0, (summary.value.totalUsers || 0) - (summary.value.verifiedEmailUsers || 0));
+});
+
+const unverifiedPercentage = computed(() => {
+  if (!summary.value.totalUsers) return 0;
+  return Math.max(0, 100 - verifiedPercentage.value);
+});
+
 // SVG Chart Generator cho Đăng ký mới & Đăng nhập
 const maxChartVal = computed(() => {
   const regMax = Math.max(...chartData.value.registrations.map(r => r.count), 0);
@@ -121,6 +168,57 @@ const getAreaPoints = (items, maxVal, width = 600, height = 180) => {
   const polyPoints = getPolylinePoints(items, maxVal, width, height);
   return `0,${height} ${polyPoints} ${width},${height}`;
 };
+
+// Xử lý sao lưu dữ liệu toàn hệ thống
+const handleExportBackup = async () => {
+  isExporting.value = true;
+  try {
+    const res = await adminExportBackup();
+    const data = res.data || res;
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lsmvoice_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    notification.success('Đã tải xuống tệp sao lưu dữ liệu (.json) thành công!');
+  } catch (err) {
+    notification.error(err.message || 'Không thể xuất bản sao lưu.');
+  } finally {
+    isExporting.value = false;
+  }
+};
+
+const triggerRestoreFile = () => {
+  if (restoreFileInput.value) {
+    restoreFileInput.value.click();
+  }
+};
+
+const handleFileRestore = async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      isImporting.value = true;
+      const backupData = JSON.parse(e.target.result);
+      const res = await adminImportBackup(backupData);
+      notification.success(res.data?.message || res.message || 'Khôi phục dữ liệu thành công!');
+      await refreshAll(false);
+    } catch (err) {
+      notification.error(err.message || 'Tệp sao lưu không hợp lệ hoặc lỗi định dạng JSON.');
+    } finally {
+      isImporting.value = false;
+      event.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+};
 </script>
 
 <template>
@@ -132,8 +230,20 @@ const getAreaPoints = (items, maxVal, width = 600, height = 180) => {
           <span class="live-pulse-dot" title="Hệ thống đang hoạt động theo thời gian thực"></span>
           <h1 class="page-title mb-0" style="font-size: 19px;">Trung tâm Quản trị LsmVoice</h1>
         </div>
-        <span class="badge-neutral d-none d-md-inline-flex" style="font-size: 11px;">
-          <i class="bi bi-database me-1 text-primary"></i> SQLite Production
+        <span
+          v-if="summary.isUsingTurso"
+          class="badge bg-success-subtle text-success border border-success-subtle d-none d-md-inline-flex align-items-center rounded-pill px-2.5 py-1"
+          style="font-size: 11.5px;"
+        >
+          <i class="bi bi-cloud-check-fill me-1"></i> Turso Cloud SQLite (Vĩnh viễn)
+        </span>
+        <span
+          v-else
+          class="badge bg-warning-subtle text-warning border border-warning-subtle d-none d-md-inline-flex align-items-center rounded-pill px-2.5 py-1"
+          style="font-size: 11.5px;"
+          title="Dữ liệu đang lưu tạm trên ổ đĩa của Render. Cấu hình TURSO_DATABASE_URL để lưu trữ vĩnh viễn."
+        >
+          <i class="bi bi-hdd-network me-1"></i> SQLite Cục bộ (Tạm thời)
         </span>
       </div>
 
@@ -361,18 +471,18 @@ const getAreaPoints = (items, maxVal, width = 600, height = 180) => {
             <div class="mt-4">
               <div class="d-flex justify-content-between small fw-semibold mb-1">
                 <span class="text-secondary">Thành viên (USER)</span>
-                <span class="text-main">{{ summary.totalUsers - (chartData.roles.find(r => r.role === 'admin')?.count || 1) }}</span>
+                <span class="text-main">{{ userCount }} ({{ userRolePercentage }}%)</span>
               </div>
               <div class="progress mb-3" style="height: 6px; background: var(--surface-hover);">
-                <div class="progress-bar bg-primary" role="progressbar" :style="{ width: '85%' }"></div>
+                <div class="progress-bar bg-primary" role="progressbar" :style="{ width: userRolePercentage + '%' }"></div>
               </div>
 
               <div class="d-flex justify-content-between small fw-semibold mb-1">
                 <span class="text-secondary">Quản trị viên (ADMIN)</span>
-                <span class="text-main">{{ chartData.roles.find(r => r.role === 'admin')?.count || 1 }}</span>
+                <span class="text-main">{{ adminCount }} ({{ adminRolePercentage }}%)</span>
               </div>
               <div class="progress mb-4" style="height: 6px; background: var(--surface-hover);">
-                <div class="progress-bar" style="background: var(--violet); width: 15%;" role="progressbar"></div>
+                <div class="progress-bar" style="background: var(--violet);" role="progressbar" :style="{ width: adminRolePercentage + '%' }"></div>
               </div>
             </div>
 
@@ -388,10 +498,10 @@ const getAreaPoints = (items, maxVal, width = 600, height = 180) => {
 
               <div class="d-flex justify-content-between small fw-semibold mb-1">
                 <span class="text-secondary">Email chưa xác minh</span>
-                <span class="text-warning">{{ summary.totalUsers - summary.verifiedEmailUsers }} ({{ 100 - verifiedPercentage }}%)</span>
+                <span class="text-warning">{{ unverifiedEmailUsers }} ({{ unverifiedPercentage }}%)</span>
               </div>
               <div class="progress mb-3" style="height: 6px; background: var(--surface-hover);">
-                <div class="progress-bar bg-warning" role="progressbar" :style="{ width: (100 - verifiedPercentage) + '%' }"></div>
+                <div class="progress-bar bg-warning" role="progressbar" :style="{ width: unverifiedPercentage + '%' }"></div>
               </div>
             </div>
           </div>
@@ -447,6 +557,90 @@ const getAreaPoints = (items, maxVal, width = 600, height = 180) => {
                 {{ summary.lockedUsers }} tài khoản
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hàng 4: Quản lý Độ bền dữ liệu & Sao lưu / Phục hồi hệ thống -->
+    <div class="panel-white p-4 mt-4">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="card-title mb-0" style="font-size: 16px;">Sao lưu & Phục hồi Cơ sở dữ liệu</h2>
+            <span
+              v-if="summary.isUsingTurso"
+              class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0.5"
+              style="font-size: 11px;"
+            >
+              <i class="bi bi-shield-check me-1"></i> Đã kích hoạt Turso Cloud (Vĩnh viễn)
+            </span>
+            <span
+              v-else
+              class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-0.5"
+              style="font-size: 11px;"
+            >
+              <i class="bi bi-exclamation-triangle me-1"></i> SQLite Cục bộ (Tạm thời trên Render)
+            </span>
+          </div>
+          <p class="section-desc mb-0" style="font-size: 13px;">
+            Bảo vệ toàn vẹn tài khoản khách hàng, mật khẩu, tác phẩm thư viện và lịch sử nghe audio.
+          </p>
+        </div>
+
+        <!-- Các nút hành động sao lưu -->
+        <div class="d-flex align-items-center gap-2">
+          <!-- Input ẩn để upload file sao lưu -->
+          <input
+            ref="restoreFileInput"
+            type="file"
+            accept=".json,application/json"
+            class="d-none"
+            @change="handleFileRestore"
+          />
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1.5"
+            :disabled="isImporting"
+            @click="triggerRestoreFile"
+            title="Nạp lại dữ liệu tài khoản và thư viện từ tệp sao lưu JSON"
+          >
+            <span v-if="isImporting" class="spinner-border spinner-border-sm me-1.5"></span>
+            <i v-else class="bi bi-upload me-1.5"></i>
+            <span>Khôi phục dữ liệu (.json)</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn-primary-action"
+            style="height: 34px; padding: 0 14px; font-size: 12.5px;"
+            :disabled="isExporting"
+            @click="handleExportBackup"
+            title="Tải về tệp sao lưu toàn bộ dữ liệu hệ thống"
+          >
+            <span v-if="isExporting" class="spinner-border spinner-border-sm me-1.5"></span>
+            <i v-else class="bi bi-download me-1.5"></i>
+            <span>Tải bản sao lưu toàn bộ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Hộp hướng dẫn cấu hình Cloud SQLite vĩnh viễn nếu chưa bật Turso -->
+      <div v-if="!summary.isUsingTurso" class="p-3 rounded-3" style="background: var(--surface-soft); border: 1px dashed var(--border);">
+        <div class="d-flex align-items-start gap-2.5">
+          <i class="bi bi-info-circle-fill text-primary fs-5 mt-0.5 flex-shrink-0"></i>
+          <div class="small">
+            <strong class="text-main">Tại sao tài khoản bị mất khi Deploy mã mới trên Render?</strong>
+            <p class="text-muted mb-2 mt-0.5" style="line-height: 1.5;">
+              Dịch vụ miễn phí của Render sử dụng ổ cứng tạm thời (Ephemeral Filesystem). Mỗi khi bạn đẩy code Git mới hoặc server khởi động lại sau thời gian ngủ (Sleep), Render sẽ tạo một container mới và làm mới file SQLite.
+            </p>
+            <strong class="text-main">Giải pháp lưu trữ vĩnh viễn (100% Miễn phí & Độc lập):</strong>
+            <ol class="text-muted mb-0 ps-3 mt-1" style="line-height: 1.6;">
+              <li>Đăng ký cơ sở dữ liệu miễn phí tại <strong>turso.tech</strong> (Miễn phí 9GB, không cần thẻ tín dụng).</li>
+              <li>Thêm 2 biến môi trường vào Render: <code>TURSO_DATABASE_URL</code> và <code>TURSO_AUTH_TOKEN</code>.</li>
+              <li>Hệ thống LsmVoice sẽ tự động lưu dữ liệu lên Turso Cloud, không bao giờ bị mất tài khoản khi deploy nữa!</li>
+            </ol>
           </div>
         </div>
       </div>

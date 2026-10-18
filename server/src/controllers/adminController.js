@@ -93,6 +93,7 @@ export const getDashboardSummary = async (req, res, next) => {
         lockedUsers,
         totalAudioJobs,
         totalLibraryItems,
+        isUsingTurso: database.isUsingTurso || false,
       },
     });
   } catch (err) {
@@ -708,6 +709,144 @@ export const getAdminAuditLogs = async (req, res, next) => {
   }
 };
 
+/**
+ * 11. XUẤT BẢN SAO LƯU DỮ LIỆU TOÀN HỆ THỐNG (JSON EXPORT)
+ */
+export const exportBackup = async (req, res, next) => {
+  try {
+    const users = await dbAll(
+      `SELECT id, username, email, password_hash, full_name, role, status, is_email_verified, must_change_password, created_at, updated_at, last_login_at FROM users`
+    );
+    const libraryItems = await dbAll(`SELECT * FROM library_items`);
+    const categories = await dbAll(`SELECT * FROM categories`);
+    const listenHistory = await dbAll(`SELECT * FROM listen_history`);
+
+    const backupData = {
+      platform: 'LsmVoice',
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      exportedBy: req.user?.username || req.user?.email || 'admin',
+      data: {
+        users,
+        libraryItems,
+        categories,
+        listenHistory,
+      },
+    };
+
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="lsmvoice_backup_${Date.now()}.json"`);
+    res.send(JSON.stringify(backupData, null, 2));
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * 12. PHỤC HỒI DỮ LIỆU TỪ TỆP SAO LƯU JSON (JSON RESTORE)
+ */
+export const importBackup = async (req, res, next) => {
+  try {
+    const { backup } = req.body;
+    if (!backup || !backup.data || !Array.isArray(backup.data.users)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tệp sao lưu không hợp lệ hoặc thiếu dữ liệu tài khoản.',
+      });
+    }
+
+    let restoredUsers = 0;
+    for (const u of backup.data.users) {
+      if (!u.email) continue;
+      const cleanEmail = u.email.toLowerCase().trim();
+      const cleanUsername = u.username ? u.username.toLowerCase().trim() : null;
+
+      const existing = await dbGet(
+        `SELECT id FROM users WHERE email = ? OR (username = ? AND username IS NOT NULL)`,
+        [cleanEmail, cleanUsername || '']
+      );
+
+      if (!existing) {
+        await dbRun(
+          `INSERT INTO users (id, username, email, password_hash, full_name, role, status, is_email_verified, must_change_password, created_at, updated_at, last_login_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            u.id || ('usr_' + Date.now() + Math.random().toString(36).substring(2, 6)),
+            cleanUsername,
+            cleanEmail,
+            u.password_hash,
+            u.full_name || 'Người dùng',
+            u.role || 'user',
+            u.status || 'active',
+            u.is_email_verified ? 1 : 0,
+            u.must_change_password ? 1 : 0,
+            u.created_at || new Date().toISOString(),
+            u.updated_at || new Date().toISOString(),
+            u.last_login_at || null,
+          ]
+        );
+        restoredUsers++;
+      }
+    }
+
+    let restoredItems = 0;
+    if (Array.isArray(backup.data.libraryItems)) {
+      for (const item of backup.data.libraryItems) {
+        if (!item.id || !item.title) continue;
+        const existing = await dbGet(`SELECT id FROM library_items WHERE id = ?`, [item.id]);
+        if (!existing) {
+          await dbRun(
+            `INSERT INTO library_items (id, user_id, title, content, voice_id, provider, char_count, category, author, description, speed, status, audio_url, duration, last_position, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              item.id,
+              item.user_id,
+              item.title,
+              item.content || '',
+              item.voice_id || 'vi-VN-HoaiMyNeural',
+              item.provider || 'edge',
+              item.char_count || 0,
+              item.category || 'Chung',
+              item.author || null,
+              item.description || null,
+              item.speed || 1.0,
+              item.status || 'text_saved',
+              item.audio_url || null,
+              item.duration || 0,
+              item.last_position || 0,
+              item.created_at || new Date().toISOString(),
+              item.updated_at || new Date().toISOString(),
+            ]
+          );
+          restoredItems++;
+        }
+      }
+    }
+
+    // Ghi nhật ký kiểm toán hệ thống
+    try {
+      await authService.logAdminAudit({
+        adminId: req.user.id,
+        adminEmail: req.user.email,
+        action: 'database_restore',
+        details: { restoredUsers, restoredItems },
+        ipAddress: req.ip,
+      });
+    } catch (_) {}
+
+    res.json({
+      success: true,
+      message: `Khôi phục dữ liệu thành công! Đã nạp ${restoredUsers} tài khoản người dùng và ${restoredItems} tác phẩm thư viện vào hệ thống.`,
+      data: {
+        restoredUsers,
+        restoredItems,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export default {
   getDashboardSummary,
   getDashboardCharts,
@@ -717,6 +856,9 @@ export default {
   updateCustomerRole,
   revokeCustomerSessions,
   resendCustomerVerification,
+  deleteCustomer,
   getLoginEvents,
   getAdminAuditLogs,
+  exportBackup,
+  importBackup,
 };

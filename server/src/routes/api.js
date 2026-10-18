@@ -148,5 +148,7 @@ router.post('/admin/customers/:id/revoke-sessions', requireAuth, requireAdmin, a
 router.post('/admin/customers/:id/resend-verification', requireAuth, requireAdmin, adminController.resendCustomerVerification);
 router.get('/admin/login-events', requireAuth, requireAdmin, adminController.getLoginEvents);
 router.get('/admin/audit-logs', requireAuth, requireAdmin, adminController.getAdminAuditLogs);
+router.get('/admin/backup/export', requireAuth, requireAdmin, adminController.exportBackup);
+router.post('/admin/backup/import', requireAuth, requireAdmin, adminController.importBackup);
 
 export default router;

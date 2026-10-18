@@ -4,6 +4,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import { createClient } from '@libsql/client';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,22 +20,52 @@ if (!fs.existsSync(audioDir)) {
 }
 
 const isTestEnv = process.env.NODE_ENV === 'test' || process.argv.some((arg) => arg.includes('test'));
+
+// Cấu hình Turso Cloud SQLite (Dành cho Production trên Render để dữ liệu vĩnh cửu)
+const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.LIBSQL_URL;
+const tursoAuthToken = process.env.TURSO_AUTH_TOKEN || process.env.LIBSQL_AUTH_TOKEN;
+
+export let isUsingTurso = false;
+let tursoClient = null;
+
+if (tursoUrl && !isTestEnv) {
+  try {
+    tursoClient = createClient({
+      url: tursoUrl,
+      authToken: tursoAuthToken,
+    });
+    isUsingTurso = true;
+    console.log('✓ Kết nối Turso Cloud SQLite thành công (Lưu trữ vĩnh viễn):', tursoUrl.replace(/\/\/.*@/, '//***@'));
+  } catch (err) {
+    console.error('Không thể kết nối Turso, chuyển về SQLite cục bộ:', err.message);
+    tursoClient = null;
+    isUsingTurso = false;
+  }
+}
+
 const dbPath = process.env.SQLITE_DB_PATH || (
   isTestEnv
     ? path.resolve(storageDir, 'lsmvoice_test.sqlite')
     : path.resolve(storageDir, 'lsmvoice.sqlite')
 );
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Không thể kết nối cơ sở dữ liệu SQLite:', err.message);
-  } else {
-    console.log(`✓ Kết nối SQLite ${isTestEnv ? '(MÔI TRƯỜNG TEST)' : ''} thành công tại:`, dbPath);
-  }
-});
+let db = null;
+if (!tursoClient) {
+  db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Không thể kết nối cơ sở dữ liệu SQLite:', err.message);
+    } else {
+      console.log(`✓ Kết nối SQLite ${isTestEnv ? '(MÔI TRƯỜNG TEST)' : ''} thành công tại:`, dbPath);
+    }
+  });
+}
 
-// Chuyển đổi các thao tác SQLite thành Promise
-export const dbRun = (sql, params = []) => {
+// Chuyển đổi các thao tác SQLite thành Promise (Hỗ trợ cả SQLite3 cục bộ lẫn Turso Cloud)
+export const dbRun = async (sql, params = []) => {
+  if (tursoClient) {
+    const res = await tursoClient.execute({ sql, args: params });
+    return { lastID: res.lastInsertRowid, changes: res.rowsAffected };
+  }
   return new Promise((resolve, reject) => {
     db.run(sql, params, function (err) {
       if (err) return reject(err);
@@ -43,7 +74,11 @@ export const dbRun = (sql, params = []) => {
   });
 };
 
-export const dbGet = (sql, params = []) => {
+export const dbGet = async (sql, params = []) => {
+  if (tursoClient) {
+    const res = await tursoClient.execute({ sql, args: params });
+    return res.rows[0] || undefined;
+  }
   return new Promise((resolve, reject) => {
     db.get(sql, params, (err, row) => {
       if (err) return reject(err);
@@ -52,7 +87,11 @@ export const dbGet = (sql, params = []) => {
   });
 };
 
-export const dbAll = (sql, params = []) => {
+export const dbAll = async (sql, params = []) => {
+  if (tursoClient) {
+    const res = await tursoClient.execute({ sql, args: params });
+    return res.rows || [];
+  }
   return new Promise((resolve, reject) => {
     db.all(sql, params, (err, rows) => {
       if (err) return reject(err);
@@ -353,4 +392,5 @@ export default {
   initDatabase,
   storageDir,
   audioDir,
+  isUsingTurso,
 };
