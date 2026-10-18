@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import Navbar from './components/Navbar.vue';
 import AudioPlayer from './components/AudioPlayer.vue';
 import NotificationProvider from './components/NotificationProvider.vue';
@@ -10,6 +11,8 @@ import { useTtsStore } from './stores/ttsStore.js';
 import { usePlayerStore } from './stores/playerStore.js';
 import { useNotificationStore } from './stores/notificationStore.js';
 
+const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const ttsStore = useTtsStore();
 const playerStore = usePlayerStore();
@@ -17,6 +20,16 @@ const notification = useNotificationStore();
 
 const showAuthModal = ref(false);
 const showExporterModal = ref(false);
+
+// Tự động bảo vệ: Ngay khi nhấn đăng xuất, nếu đang ở giao diện Quản trị viên (/admin/*), lập tức đá về trang chủ
+watch(
+  () => [authStore.isAuthenticated, authStore.isAdmin, route.path],
+  ([isAuth, isAdmin, path]) => {
+    if (path && path.startsWith('/admin') && (!isAuth || !isAdmin)) {
+      router.replace('/');
+    }
+  }
+);
 
 const handleNotify = (payload) => {
   if (typeof payload === 'string') {

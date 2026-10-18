@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import router from '../router/index.js';
 import {
   authRegister,
   authRequestLoginOtp,
@@ -125,6 +126,13 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('lsm_user');
     sessionStorage.removeItem('lsm_token');
     sessionStorage.removeItem('lsm_user');
+
+    // Lập tức đưa người dùng ra khỏi giao diện Quản trị viên và chuyển về trang chủ
+    if (router.currentRoute.value.path.startsWith('/admin') || router.currentRoute.value.meta?.requiresAuth) {
+      router.replace('/');
+    } else {
+      router.replace('/');
+    }
   };
 
   /**
@@ -140,6 +148,13 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('lsm_user');
     sessionStorage.removeItem('lsm_token');
     sessionStorage.removeItem('lsm_user');
+
+    // Lập tức đưa người dùng ra khỏi giao diện Quản trị viên và chuyển về trang chủ
+    if (router.currentRoute.value.path.startsWith('/admin') || router.currentRoute.value.meta?.requiresAuth) {
+      router.replace('/');
+    } else {
+      router.replace('/');
+    }
   };
 
   /**
