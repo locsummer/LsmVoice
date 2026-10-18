@@ -2,8 +2,21 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { adminGetLoginEvents } from '../../services/api.js';
 import { useNotificationStore } from '../../stores/notificationStore.js';
+import { useAuthStore } from '../../stores/authStore.js';
 
 const notification = useNotificationStore();
+const authStore = useAuthStore();
+
+// Lập tức đá ra trang chủ nếu đăng xuất hoặc không phải là admin
+watch(
+  () => [authStore.isAuthenticated, authStore.isAdmin],
+  ([isAuth, isAdmin]) => {
+    if (!isAuth || !isAdmin) {
+      window.location.replace('/');
+    }
+  },
+  { immediate: true }
+);
 
 const isLoading = ref(true);
 const events = ref([]);
@@ -76,7 +89,7 @@ const formatDate = (dateString) => {
 </script>
 
 <template>
-  <div class="container-fluid px-3 px-lg-4 py-4" style="max-width: 1440px;">
+  <div v-if="authStore.isAuthenticated && authStore.isAdmin" class="container-fluid px-3 px-lg-4 py-4" style="max-width: 1440px;">
     <!-- Navigation Header Quản trị (Chuẩn SaaS) -->
     <div class="admin-nav-bar p-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
       <div class="d-flex align-items-center gap-3">

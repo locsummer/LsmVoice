@@ -127,12 +127,8 @@ export const useAuthStore = defineStore('auth', () => {
     sessionStorage.removeItem('lsm_token');
     sessionStorage.removeItem('lsm_user');
 
-    // Lập tức đưa người dùng ra khỏi giao diện Quản trị viên và chuyển về trang chủ
-    if (router.currentRoute.value.path.startsWith('/admin') || router.currentRoute.value.meta?.requiresAuth) {
-      router.replace('/');
-    } else {
-      router.replace('/');
-    }
+    // Buộc trình duyệt rời khỏi trang quản trị ngay lập tức về trang chủ
+    window.location.replace('/');
   };
 
   /**
@@ -149,12 +145,8 @@ export const useAuthStore = defineStore('auth', () => {
     sessionStorage.removeItem('lsm_token');
     sessionStorage.removeItem('lsm_user');
 
-    // Lập tức đưa người dùng ra khỏi giao diện Quản trị viên và chuyển về trang chủ
-    if (router.currentRoute.value.path.startsWith('/admin') || router.currentRoute.value.meta?.requiresAuth) {
-      router.replace('/');
-    } else {
-      router.replace('/');
-    }
+    // Buộc trình duyệt rời khỏi trang quản trị ngay lập tức về trang chủ
+    window.location.replace('/');
   };
 
   /**

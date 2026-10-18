@@ -37,6 +37,11 @@ const navLinks = computed(() => {
 
   return links;
 });
+
+const handleLogout = async () => {
+  await authStore.logout();
+  window.location.replace('/');
+};
 </script>
 
 <template>
@@ -133,7 +138,7 @@ const navLinks = computed(() => {
               </li>
               <li><hr class="dropdown-divider my-1 hairline-border" /></li>
               <li>
-                <button class="dropdown-item small py-2 text-danger" @click="authStore.logout">
+                <button class="dropdown-item small py-2 text-danger" @click="handleLogout">
                   <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất
                 </button>
               </li>
@@ -265,7 +270,7 @@ const navLinks = computed(() => {
             type="button"
             class="btn-danger-action"
             style="height: 40px; width: 44px; padding: 0;"
-            @click="authStore.logout(); isMobileMenuOpen = false;"
+            @click="handleLogout(); isMobileMenuOpen = false;"
             title="Đăng xuất"
           >
             <i class="bi bi-box-arrow-right fs-6"></i>
