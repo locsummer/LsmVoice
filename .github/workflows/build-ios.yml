@@ -61,7 +61,40 @@ jobs:
       - name: Resolve Swift Package Dependencies
         run: |
           cd client/ios/App
-          xcodebuild -project App.xcodeproj -scheme App -resolvePackageDependencies
+          xcodebuild -project App.xcodeproj -scheme App -derivedDataPath derived_data -resolvePackageDependencies
+
+      - name: Patch Swift Interfaces for Capacitor 8 Compatibility
+        run: |
+          cd client/ios/App
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          let count = 0;
+          function walk(dir) {
+            if (!fs.existsSync(dir)) return;
+            try {
+              for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
+                const full = path.join(dir, f.name);
+                if (f.isDirectory()) {
+                  walk(full);
+                } else if (f.name.endsWith('.swiftinterface')) {
+                  let c = fs.readFileSync(full, 'utf8');
+                  const target = String.fromCharCode(36) + 'NonescapableTypes';
+                  if (c.includes(target)) {
+                    console.log('Unlocking Capacitor methods in:', full);
+                    c = c.split(target).join('true');
+                    fs.writeFileSync(full, c, 'utf8');
+                    count++;
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+          walk('derived_data');
+          walk(path.join(process.env.HOME, 'Library/Caches'));
+          walk(path.join(process.env.HOME, 'Library/Developer'));
+          console.log('Total patched interfaces:', count);
+          "
 
       - name: Compile iOS App (Unsigned for Sideloading)
         run: |
@@ -82,6 +115,7 @@ jobs:
           if [ $STATUS -ne 0 ]; then
             echo "::error::Xcode build failed with exit code $STATUS"
             echo "==================== XCODE BUILD ERROR LOG ===================="
+            grep -i -E "error:|warning:|failed" xcode_build.log | head -n 50 || true
             tail -n 80 xcode_build.log
             echo "==============================================================="
             exit $STATUS
