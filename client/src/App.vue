@@ -13,7 +13,6 @@ import { usePlayerStore } from './stores/playerStore.js';
 import { useNotificationStore } from './stores/notificationStore.js';
 import { isNativeApp } from './services/api.js';
 import { App as CapApp } from '@capacitor/app';
-import { SplashScreen } from '@capacitor/splash-screen';
 
 const router = useRouter();
 const route = useRoute();
@@ -55,10 +54,6 @@ onMounted(async () => {
 
   // Khởi tạo các tính năng Native trên Android & iOS
   if (isNativeApp()) {
-    try {
-      await SplashScreen.hide();
-    } catch (_) {}
-
     // Xử lý nút Back phần cứng của Android
     CapApp.addListener('backButton', ({ canGoBack }) => {
       if (showAuthModal.value) {
