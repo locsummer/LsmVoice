@@ -13,21 +13,29 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22 (LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Install Root & Client Dependencies
+      - name: Install Client Dependencies
         run: |
-          npm install --include=dev
-          cd client && npm install --include=dev
+          cd client
+          npm install
 
-      - name: Build Web Client & Sync Capacitor
+      - name: Build Web Client (Vite)
         run: |
           cd client
           npm run build
-          npx cap sync ios
+
+      - name: Sync iOS Native Shell (Capacitor)
+        run: |
+          cd client
+          npx @capacitor/cli sync ios
+
+      - name: Verify Xcode Version
+        run: |
+          xcodebuild -version
 
       - name: Build iOS Archive with Xcode
         run: |
@@ -37,17 +45,17 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/App.xcarchive \
-            archive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="" \
+            archive
 
       - name: Package Payload into IPA
         run: |
           cd client/ios/App/build/App.xcarchive/Products/Applications
           mkdir -p Payload
           cp -r App.app Payload/
-          zip -r ../../../../LsmVoice.ipa Payload
+          zip -r -q ../../../../LsmVoice.ipa Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
