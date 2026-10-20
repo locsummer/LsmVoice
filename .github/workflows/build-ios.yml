@@ -33,9 +33,11 @@ jobs:
           cd client
           npx @capacitor/cli sync ios
 
-      - name: Verify Xcode Version
+      - name: Verify Xcode Version & Schemes
         run: |
           xcodebuild -version
+          cd client/ios/App
+          xcodebuild -project App.xcodeproj -list
 
       - name: Resolve Swift Package Dependencies
         run: |
@@ -56,11 +58,14 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGN_STYLE="Manual" \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            build 2>&1 | tee xcode_build.log || {
-              echo "=== XCODE BUILD FAILED - RECENT LOGS ==="
-              tail -n 80 xcode_build.log
-              exit 1
-            }
+            build 2>&1 | tee xcode_build.log
+
+      - name: Upload Xcode Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xcode-Build-Log
+          path: client/ios/App/xcode_build.log
 
       - name: Package Payload into IPA
         run: |
