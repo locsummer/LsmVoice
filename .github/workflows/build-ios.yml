@@ -13,6 +13,26 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Select Xcode 16
+        run: |
+          echo "=== Scanning Available Xcode Installations ==="
+          ls -d /Applications/Xcode* || true
+          FOUND_XCODE=""
+          for ver in 16.2 16.1 16.0 16; do
+            if [ -d "/Applications/Xcode_${ver}.app" ]; then
+              FOUND_XCODE="/Applications/Xcode_${ver}.app"
+              break
+            fi
+          done
+          if [ -n "$FOUND_XCODE" ]; then
+            echo "Selecting $FOUND_XCODE"
+            sudo xcode-select -s "$FOUND_XCODE"
+            echo "DEVELOPER_DIR=$FOUND_XCODE" >> $GITHUB_ENV
+          else
+            echo "Using default xcode-select"
+          fi
+          xcodebuild -version
+
       - name: Setup Node.js 22 (LTS)
         uses: actions/setup-node@v4
         with:
@@ -33,9 +53,8 @@ jobs:
           cd client
           npx @capacitor/cli sync ios
 
-      - name: Verify Xcode Version & Schemes
+      - name: Verify Schemes & Config
         run: |
-          xcodebuild -version
           cd client/ios/App
           xcodebuild -project App.xcodeproj -list
 
@@ -50,7 +69,7 @@ jobs:
           set +e
           xcodebuild -project App.xcodeproj \
             -scheme App \
-            -configuration Release \
+            -configuration Debug \
             -destination 'generic/platform=iOS' \
             -derivedDataPath derived_data \
             CODE_SIGNING_ALLOWED=NO \
@@ -78,9 +97,18 @@ jobs:
       - name: Package Payload into IPA
         run: |
           cd client/ios/App
+          APP_PATH=$(find derived_data/Build/Products -name "App.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::Could not find App.app in derived_data!"
+            exit 1
+          fi
+          echo "Found compiled app at: $APP_PATH"
+          rm -rf Payload
           mkdir -p Payload
-          cp -r derived_data/Build/Products/Release-iphoneos/App.app Payload/
+          cp -r "$APP_PATH" Payload/
           zip -r -q ../../../LsmVoice.ipa Payload
+          cd ../../..
+          ls -lh LsmVoice.ipa
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
