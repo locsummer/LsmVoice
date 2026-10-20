@@ -6,9 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "npx cap sync",
+    "cap:build": "vite build && npx cap sync",
+    "android:open": "npx cap open android",
+    "android:build": "cd android && gradlew.bat assembleDebug",
+    "android:bundle": "cd android && gradlew.bat bundleRelease",
+    "ios:open": "npx cap open ios"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/share": "^8.0.3",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "@popperjs/core": "^2.11.8",
     "@vitejs/plugin-vue": "^5.2.1",
     "axios": "^1.7.9",
@@ -18,5 +29,10 @@
     "vite": "^6.1.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/ios": "^8.5.3"
   }
 }

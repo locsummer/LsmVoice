@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import Navbar from './components/Navbar.vue';
 import AudioPlayer from './components/AudioPlayer.vue';
+import MobileBottomNav from './components/MobileBottomNav.vue';
 import NotificationProvider from './components/NotificationProvider.vue';
 import AuthModal from './components/AuthModal.vue';
 import AudioExporter from './components/AudioExporter.vue';
@@ -10,6 +11,10 @@ import { useAuthStore } from './stores/authStore.js';
 import { useTtsStore } from './stores/ttsStore.js';
 import { usePlayerStore } from './stores/playerStore.js';
 import { useNotificationStore } from './stores/notificationStore.js';
+import { isNativeApp } from './services/api.js';
+import { App as CapApp } from '@capacitor/app';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
 
 const router = useRouter();
 const route = useRoute();
@@ -44,10 +49,39 @@ const handleNotify = (payload) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   authStore.checkProfile();
   ttsStore.loadVoices();
   ttsStore.loadDraft();
+
+  // Khởi tạo các tính năng Native trên Android & iOS
+  if (isNativeApp()) {
+    try {
+      await StatusBar.setStyle({ style: Style.Dark });
+      await StatusBar.setBackgroundColor({ color: '#11131D' });
+    } catch (_) {}
+
+    try {
+      await SplashScreen.hide();
+    } catch (_) {}
+
+    // Xử lý nút Back phần cứng của Android
+    CapApp.addListener('backButton', ({ canGoBack }) => {
+      if (showAuthModal.value) {
+        showAuthModal.value = false;
+        return;
+      }
+      if (showExporterModal.value) {
+        showExporterModal.value = false;
+        return;
+      }
+      if (route.path !== '/') {
+        router.back();
+      } else {
+        CapApp.exitApp();
+      }
+    });
+  }
 });
 </script>
 
@@ -63,6 +97,9 @@ onMounted(() => {
 
     <!-- Trình phát Audio chuyên nghiệp gắn chân trang (Persistent Player) -->
     <AudioPlayer @open-exporter="showExporterModal = true" />
+
+    <!-- Thanh điều hướng đáy màn hình cho Điện thoại di động (Bottom Navigation Bar) -->
+    <MobileBottomNav />
 
     <!-- Cửa sổ đăng nhập / đăng ký -->
     <AuthModal

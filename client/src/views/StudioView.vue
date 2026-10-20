@@ -68,9 +68,32 @@ const handleOpenSaveModal = () => {
 </script>
 
 <template>
-  <div class="container-fluid px-2 px-sm-3 px-lg-4 py-3 py-lg-4" style="max-width: 1480px;">
-    <!-- Hero Section (UI8 Modern Dashboard style) -->
-    <div class="hero-container mb-3 mb-md-4 p-3 p-md-4 rounded-4">
+  <div class="container-fluid px-2 px-sm-3 px-lg-4 py-2 py-md-3 py-lg-4" style="max-width: 1480px;">
+    <!-- Mobile Mini Header (< 768px): Gọn gàng, hiện đại như ứng dụng Native -->
+    <div class="d-md-none mb-2.5 px-1 d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <div class="logo-box" style="width: 28px; height: 28px; border-radius: 8px;">
+          <i class="bi bi-soundwave text-white" style="font-size: 14px;"></i>
+        </div>
+        <div>
+          <div class="d-flex align-items-center gap-1.5">
+            <span class="fw-bold text-main" style="font-size: 14.5px;">Studio AI</span>
+            <span class="badge-tag" style="font-size: 10px; padding: 1px 6px;">Tối đa 50k ký tự</span>
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="btn-save-mini"
+        @click="handleOpenSaveModal"
+      >
+        <i class="bi bi-bookmark-plus me-1"></i>
+        <span>Lưu nháp</span>
+      </button>
+    </div>
+
+    <!-- Hero Section cho Desktop / Tablet (>= 768px) -->
+    <div class="hero-container d-none d-md-block mb-3 mb-md-4 p-3 p-md-4 rounded-4">
       <div class="hero-row">
         <!-- Bên trái: Tiêu đề, Badge & Mô tả -->
         <div class="hero-content">
@@ -201,6 +224,25 @@ const handleOpenSaveModal = () => {
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+}
+
+.btn-save-mini {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-save-mini:active {
+  transform: scale(0.95);
+  background: var(--surface-hover);
 }
 
 @media (max-width: 768px) {

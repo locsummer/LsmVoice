@@ -13,6 +13,117 @@ import {
 
 export const MAX_CHAR_LIMIT = 50000;
 
+export const DEFAULT_VOICES = [
+  {
+    id: 'vi-VN-HoaiMyNeural',
+    provider: 'edge',
+    name: 'Hoài My',
+    gender: 'female',
+    region: 'north',
+    description: 'Giọng nữ miền Bắc nhẹ nhàng, truyền cảm, thích hợp đọc truyện, tiểu thuyết và tin tức',
+    sampleText: 'Chào bạn, tôi là Hoài My. Chúc bạn có những phút giây nghe truyện thư giãn và tuyệt vời.',
+    supportsSpeed: true,
+    supportsPitch: true,
+    isNeural: true,
+  },
+  {
+    id: 'vi-VN-NamMinhNeural',
+    provider: 'edge',
+    name: 'Nam Minh',
+    gender: 'male',
+    region: 'north',
+    description: 'Giọng nam miền Bắc trầm ấm, đĩnh đạc, phù hợp với truyện kiếm hiệp, tài liệu và văn bản dài',
+    sampleText: 'Xin chào, tôi là Nam Minh. Tôi có thể đọc các tác phẩm văn học và tài liệu dài với chất giọng trầm ấm.',
+    supportsSpeed: true,
+    supportsPitch: true,
+    isNeural: true,
+  },
+  {
+    id: 'vi-VN-DaLatNeural',
+    provider: 'edge',
+    name: 'Đà Lạt',
+    gender: 'female',
+    region: 'south',
+    description: 'Giọng nữ miền Nam trong trẻo, tự nhiên, ngọt ngào và dễ nghe',
+    sampleText: 'Dạ xin chào mọi người, tôi là Đà Lạt, rất vui được đồng hành cùng quý thính giả.',
+    supportsSpeed: true,
+    supportsPitch: true,
+    isNeural: true,
+  },
+  {
+    id: 'banmai',
+    provider: 'fpt',
+    name: 'Ban Mai',
+    gender: 'female',
+    region: 'north',
+    description: 'Giọng nữ miền Bắc quen thuộc của FPT.AI, rõ ràng, tốc độ vừa phải',
+    sampleText: 'Chào bạn, tôi là Ban Mai, giọng đọc nữ miền Bắc từ nền tảng FPT.AI.',
+    supportsSpeed: true,
+    supportsPitch: false,
+    isNeural: true,
+  },
+  {
+    id: 'thuminh',
+    provider: 'fpt',
+    name: 'Thu Minh',
+    gender: 'female',
+    region: 'north',
+    description: 'Giọng nữ miền Bắc truyền cảm, thích hợp đọc truyện tâm sự, tản văn',
+    sampleText: 'Chào bạn, tôi là Thu Minh, hy vọng giọng đọc này sẽ mang lại cảm xúc lắng đọng cho bạn.',
+    supportsSpeed: true,
+    supportsPitch: false,
+    isNeural: true,
+  },
+  {
+    id: 'leminh',
+    provider: 'fpt',
+    name: 'Lê Minh',
+    gender: 'male',
+    region: 'north',
+    description: 'Giọng nam miền Bắc dõng dạc, phát âm chuẩn, phù hợp tin tức và tài liệu',
+    sampleText: 'Tôi là Lê Minh, giọng đọc nam miền Bắc sẵn sàng chuyển đổi văn bản của bạn thành âm thanh.',
+    supportsSpeed: true,
+    supportsPitch: false,
+    isNeural: true,
+  },
+  {
+    id: 'myan',
+    provider: 'fpt',
+    name: 'Mỹ An',
+    gender: 'female',
+    region: 'south',
+    description: 'Giọng nữ miền Nam dịu dàng, tự nhiên, ngọt ngào',
+    sampleText: 'Xin chào các bạn, em là Mỹ An, giọng đọc miền Nam rất hân hạnh được phục vụ.',
+    supportsSpeed: true,
+    supportsPitch: false,
+    isNeural: true,
+  },
+  {
+    id: 'giahuy',
+    provider: 'fpt',
+    name: 'Gia Huy',
+    gender: 'male',
+    region: 'central',
+    description: 'Giọng nam miền Trung đầm ấm, mộc mạc, tạo nét đặc trưng cho tác phẩm',
+    sampleText: 'Xin chào bà con cô bác, tôi là Gia Huy, mang chất giọng miền Trung chân chất và mộc mạc.',
+    supportsSpeed: true,
+    supportsPitch: false,
+    isNeural: true,
+  },
+  {
+    id: 'linhsan',
+    provider: 'fpt',
+    name: 'Linh San',
+    gender: 'female',
+    region: 'south',
+    description: 'Giọng nữ miền Nam trẻ trung, năng động',
+    sampleText: 'Chào các bạn, mình là Linh San với giọng đọc trẻ trung và sinh động.',
+    supportsSpeed: true,
+    supportsPitch: false,
+    isNeural: true,
+  },
+];
+
 export const useTtsStore = defineStore('tts', () => {
   // --- Text State ---
   const title = ref('');
@@ -21,7 +132,7 @@ export const useTtsStore = defineStore('tts', () => {
   const isDraftSaved = ref(false);
 
   // --- Voice Selection & Filters ---
-  const voices = ref([]);
+  const voices = ref([...DEFAULT_VOICES]);
   const providersStatus = ref({});
   const selectedVoiceId = ref('vi-VN-HoaiMyNeural');
   const speed = ref(1.0);
@@ -145,7 +256,7 @@ export const useTtsStore = defineStore('tts', () => {
         fetchVoices(),
         fetchProvidersStatus(),
       ]);
-      if (voicesRes.data && voicesRes.data.voices) {
+      if (voicesRes.data && voicesRes.data.voices && voicesRes.data.voices.length > 0) {
         voices.value = voicesRes.data.voices;
         // Đảm bảo có giọng được chọn
         if (!selectedVoiceId.value && voices.value.length > 0) {

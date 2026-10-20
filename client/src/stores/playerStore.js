@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { logHistory, GuestStorage } from '../services/api.js';
+import { logHistory, GuestStorage, resolveBackendUrl } from '../services/api.js';
 
 export const usePlayerStore = defineStore('player', () => {
   // --- Audio Instance & Core State ---
@@ -137,7 +137,8 @@ export const usePlayerStore = defineStore('player', () => {
     isLoading.value = true;
     hasError.value = false;
 
-    audioElement.src = url;
+    const resolvedUrl = resolveBackendUrl(url);
+    audioElement.src = resolvedUrl;
     audioElement.playbackRate = playbackRate.value;
     audioElement.volume = isMuted.value ? 0 : volume.value;
 

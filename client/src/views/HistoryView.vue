@@ -72,9 +72,9 @@ const handleClearAll = async () => {
 </script>
 
 <template>
-  <div class="container-fluid px-3 px-lg-4 py-4" style="max-width: 1480px;">
+  <div class="container-fluid px-2 px-sm-3 px-lg-4 py-3 py-lg-4" style="max-width: 1480px;">
     <!-- Header -->
-    <div class="panel-white p-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div class="panel-white p-3 p-md-4 mb-3 mb-md-4 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
       <div>
         <h1 class="page-title mb-1">Lịch sử nghe & Thống kê</h1>
         <p class="section-desc mb-0">
@@ -88,14 +88,14 @@ const handleClearAll = async () => {
         @click="handleClearAll"
       >
         <i class="bi bi-trash3 me-1"></i>
-        <span>Xóa toàn bộ lịch sử</span>
+        <span>Xóa toàn bộ</span>
       </button>
     </div>
 
     <!-- 3 Thẻ thống kê Dashboard UI8 -->
-    <div class="row g-4 mb-4">
-      <div class="col-md-4">
-        <div class="panel-white p-4 d-flex align-items-center gap-3">
+    <div class="row g-2.5 g-md-4 mb-3 mb-md-4">
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="panel-white p-3 p-md-4 d-flex align-items-center gap-3">
           <div class="stat-icon-box bg-primary-soft text-primary">
             <i class="bi bi-headphones fs-4"></i>
           </div>
@@ -104,13 +104,13 @@ const handleClearAll = async () => {
             <div class="h3 fw-bold text-main mb-0">
               {{ historyStore.historyList.length }}
             </div>
-            <div class="text-muted small mt-1">Các phiên đã khởi tạo</div>
+            <div class="text-muted small mt-0.5" style="font-size: 11.5px;">Các phiên đã khởi tạo</div>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="panel-white p-4 d-flex align-items-center gap-3">
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="panel-white p-3 p-md-4 d-flex align-items-center gap-3">
           <div class="stat-icon-box text-violet" style="background: var(--violet-soft); color: var(--violet);">
             <i class="bi bi-hourglass-split fs-4"></i>
           </div>
@@ -119,13 +119,13 @@ const handleClearAll = async () => {
             <div class="h3 fw-bold text-main mb-0">
               {{ Math.round(historyStore.totalListenedDuration / 60) }} <span class="h6 fw-normal text-muted">phút</span>
             </div>
-            <div class="text-muted small mt-1">Tổng thời gian phát audio</div>
+            <div class="text-muted small mt-0.5" style="font-size: 11.5px;">Tổng thời gian phát audio</div>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="panel-white p-4 d-flex align-items-center gap-3">
+      <div class="col-12 col-sm-12 col-md-4">
+        <div class="panel-white p-3 p-md-4 d-flex align-items-center gap-3">
           <div class="stat-icon-box" style="background: var(--success-soft); color: var(--success);">
             <i class="bi bi-check2-circle fs-4"></i>
           </div>
@@ -134,7 +134,7 @@ const handleClearAll = async () => {
             <div class="h3 fw-bold text-main mb-0">
               {{ historyStore.historyList.filter((h) => h.completed).length }}
             </div>
-            <div class="text-muted small mt-1">Đã nghe trọn vẹn</div>
+            <div class="text-muted small mt-0.5" style="font-size: 11.5px;">Đã nghe trọn vẹn</div>
           </div>
         </div>
       </div>

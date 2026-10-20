@@ -11,6 +11,11 @@
     "client:dev": "cd client && npm run dev",
     "server:start": "cd server && npm start",
     "client:build": "cd client && npm run build",
+    "client:sync": "cd client && npm run cap:sync",
+    "android:build": "cd client && npm run android:build",
+    "android:bundle": "cd client && npm run android:bundle",
+    "android:open": "cd client && npm run android:open",
+    "ios:open": "cd client && npm run ios:open",
     "test": "cd server && npm test"
   },
   "keywords": [

@@ -347,29 +347,28 @@ onUnmounted(() => {
   color: var(--primary);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 991.98px) {
   .floating-player-wrapper {
-    bottom: 0 !important;
+    bottom: calc(56px + max(6px, env(safe-area-inset-bottom, 6px))) !important;
     left: 0 !important;
     right: 0 !important;
-    padding: 0 !important;
+    padding: 0 8px !important;
   }
 
   .ui8-player-card {
-    border-radius: 16px 16px 0 0 !important;
-    border-bottom: none !important;
-    border-left: none !important;
-    border-right: none !important;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25) !important;
-    padding: 8px 12px max(8px, env(safe-area-inset-bottom)) 12px !important;
+    border-radius: 14px !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18) !important;
+    padding: 8px 12px !important;
+    background: var(--surface) !important;
   }
 
   .player-info-col {
-    max-width: 44% !important;
+    max-width: 40% !important;
   }
 
   .player-title {
-    font-size: 13.5px !important;
+    font-size: 12.5px !important;
   }
 
   .control-btn {
@@ -379,8 +378,8 @@ onUnmounted(() => {
   }
 
   .ui8-play-btn {
-    width: 38px !important;
-    height: 38px !important;
+    width: 36px !important;
+    height: 36px !important;
   }
 }
 </style>

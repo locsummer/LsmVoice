@@ -1,15 +1,69 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
+
+// Cấu hình URL máy chủ Backend chính cho ứng dụng di động (Android & iOS)
+export const DEFAULT_PRODUCTION_BACKEND = 'https://lsmvoice.onrender.com';
+
+export const isNativeApp = () => {
+  if (typeof window === 'undefined') return false;
+  if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) {
+    return true;
+  }
+  const platform = window.Capacitor?.getPlatform?.();
+  if (platform === 'android' || platform === 'ios') {
+    return true;
+  }
+  if (window.location) {
+    if (window.location.protocol === 'capacitor:') return true;
+    // Trên Android Capacitor, origin là https://localhost không có port
+    if (window.location.hostname === 'localhost' && (!window.location.port || window.location.port === '')) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '');
+  }
+  // Khi chạy trong ứng dụng native (Android hoặc iOS qua Capacitor)
+  if (isNativeApp()) {
+    return DEFAULT_PRODUCTION_BACKEND;
+  }
+  // Khi chạy trên nền tảng Web thông thường
+  return '';
+};
+
+export const resolveBackendUrl = (path = '') => {
+  if (!path) return '';
+  if (
+    path.startsWith('http://') ||
+    path.startsWith('https://') ||
+    path.startsWith('blob:') ||
+    path.startsWith('data:')
+  ) {
+    return path;
+  }
+  const base = getApiBaseUrl();
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return base ? `${base}${cleanPath}` : cleanPath;
+};
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: getApiBaseUrl() ? `${getApiBaseUrl()}/api` : '/api',
   timeout: 45000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor tự động gán JWT Token nếu đã đăng nhập
+// Interceptor tự động gán dynamic baseURL cho mobile & JWT Token nếu đã đăng nhập
 api.interceptors.request.use((config) => {
+  const base = getApiBaseUrl();
+  if (base && (!config.baseURL || config.baseURL === '/api' || !config.baseURL.startsWith('http'))) {
+    config.baseURL = `${base}/api`;
+  }
   const token = localStorage.getItem('lsm_token') || sessionStorage.getItem('lsm_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -106,7 +160,8 @@ export const adminImportBackup = (backup) => api.post('/admin/backup/import', { 
 // --- Audio Download Helper ---
 export const getAudioDownloadUrl = (filename, title = '') => {
   const cleanName = filename.startsWith('/audio/') ? filename.replace('/audio/', '') : filename;
-  return `/api/audio/download/${encodeURIComponent(cleanName)}?title=${encodeURIComponent(title)}`;
+  const path = `/api/audio/download/${encodeURIComponent(cleanName)}?title=${encodeURIComponent(title)}`;
+  return resolveBackendUrl(path);
 };
 
 // --- LocalStorage Helpers cho Chế độ Khách ---

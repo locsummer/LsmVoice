@@ -441,23 +441,32 @@ const handleReadSelectedOnly = () => {
 
 @media (max-width: 768px) {
   .studio-text-panel {
-    min-height: 380px;
+    min-height: auto !important;
+    padding: 14px 12px !important;
   }
 
   .title-input {
-    font-size: 1.15rem !important;
+    font-size: 1.05rem !important;
   }
 
-  .ui8-textarea {
-    min-height: 220px !important;
-    padding: 12px 14px !important;
-    font-size: 16px !important; /* Ngăn iOS Safari tự zoom in */
-    line-height: 1.65;
+  .toolbar-container {
+    padding: 4px 6px !important;
   }
 
   .toolbar-btn {
-    padding: 6px 9px !important;
+    padding: 6px 11px !important;
     font-size: 12px !important;
+    border-radius: var(--radius-pill) !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    white-space: nowrap;
+  }
+
+  .ui8-textarea {
+    min-height: 165px !important;
+    padding: 12px 14px !important;
+    font-size: 15px !important;
+    line-height: 1.6;
   }
 }
 
@@ -474,6 +483,15 @@ const handleReadSelectedOnly = () => {
 
   .studio-bottom-btn-group button {
     flex: 1 1 0;
+    height: 44px !important;
+    font-size: 13.5px !important;
+    border-radius: 12px !important;
+  }
+
+  .btn-primary-action {
+    flex: 2 1 0 !important;
+    font-weight: 650 !important;
+    box-shadow: 0 4px 14px rgba(92, 124, 250, 0.35) !important;
   }
 }
 </style>

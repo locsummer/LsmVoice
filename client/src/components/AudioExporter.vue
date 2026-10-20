@@ -1,16 +1,43 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useTtsStore } from '../stores/ttsStore.js';
 import { usePlayerStore } from '../stores/playerStore.js';
-import { getAudioDownloadUrl } from '../services/api.js';
+import { getAudioDownloadUrl, isNativeApp } from '../services/api.js';
+import { Share } from '@capacitor/share';
 
 const emit = defineEmits(['close']);
 
 const ttsStore = useTtsStore();
 const playerStore = usePlayerStore();
+const canShare = ref(false);
+
+onMounted(async () => {
+  try {
+    const res = await Share.canShare();
+    canShare.value = res.value || isNativeApp();
+  } catch {
+    canShare.value = typeof navigator !== 'undefined' && !!navigator.share;
+  }
+});
 
 const currentJob = computed(() => ttsStore.activeJob);
 const trackTitle = computed(() => playerStore.currentTitle || ttsStore.title || 'audio_lsmvoice');
+
+// Chia sẻ bản ghi qua hệ điều hành (Android / iOS / Web Share API)
+const handleShare = async () => {
+  const rawUrl = currentJob.value?.mergedAudioUrl || playerStore.currentAudioUrl;
+  const downloadUrl = rawUrl ? getAudioDownloadUrl(rawUrl, trackTitle.value) : '';
+  try {
+    await Share.share({
+      title: trackTitle.value,
+      text: `LsmVoice - Bản đọc: ${trackTitle.value}`,
+      url: downloadUrl || undefined,
+      dialogTitle: 'Chia sẻ bản ghi âm LsmVoice',
+    });
+  } catch (err) {
+    console.log('Chia sẻ bị hủy hoặc không hỗ trợ:', err);
+  }
+};
 
 // Tải xuống file văn bản gốc dạng .txt
 const downloadTextFile = () => {
@@ -89,7 +116,23 @@ const sanitizeFileName = (name) => {
             </button>
           </div>
 
-          <!-- Tùy chọn 2: Xuất văn bản TXT -->
+          <!-- Tùy chọn 2: Chia sẻ qua ứng dụng di động / Hệ điều hành -->
+          <div v-if="canShare" class="panel-sub p-3 mb-3 rounded-3 d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold text-main">Chia sẻ bản ghi âm</div>
+              <div class="small text-muted">Gửi qua Zalo, Messenger, Mail...</div>
+            </div>
+            <button
+              class="btn-secondary-action"
+              style="height: 40px; padding: 0 16px; font-size: 13.5px;"
+              @click="handleShare"
+            >
+              <i class="bi bi-share"></i>
+              <span>Chia sẻ</span>
+            </button>
+          </div>
+
+          <!-- Tùy chọn 3: Xuất văn bản TXT -->
           <div class="panel-sub p-3 mb-3 rounded-3 d-flex justify-content-between align-items-center">
             <div>
               <div class="fw-semibold text-main">Xuất văn bản gốc (.txt)</div>

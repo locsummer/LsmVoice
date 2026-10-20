@@ -113,9 +113,9 @@ const handleDelete = async (item) => {
 </script>
 
 <template>
-  <div class="container-fluid px-3 px-lg-4 py-4" style="max-width: 1480px;">
+  <div class="container-fluid px-2 px-sm-3 px-lg-4 py-3 py-lg-4" style="max-width: 1480px;">
     <!-- Tiêu đề trang & Nút thêm mới -->
-    <div class="panel-white p-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div class="panel-white p-3 p-md-4 mb-3 mb-md-4 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
       <div>
         <h1 class="page-title mb-1">Thư viện của tôi</h1>
         <p class="section-desc mb-0">
@@ -123,25 +123,25 @@ const handleDelete = async (item) => {
         </p>
       </div>
 
-      <div class="d-flex align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2 w-100 w-sm-auto">
         <button
           type="button"
-          class="btn-secondary-action"
+          class="btn-secondary-action flex-fill flex-sm-grow-0"
           @click="handleCreateNew"
         >
           <i class="bi bi-file-earmark-plus"></i>
-          <span>Thêm tác phẩm mới</span>
+          <span>Thêm mới</span>
         </button>
 
-        <router-link to="/" class="btn-primary-action text-decoration-none">
+        <router-link to="/" class="btn-primary-action text-decoration-none flex-fill flex-sm-grow-0 text-center">
           <i class="bi bi-mic"></i>
-          <span>Vào phòng thu</span>
+          <span>Phòng thu</span>
         </router-link>
       </div>
     </div>
 
     <!-- Thanh tìm kiếm và bộ lọc (UI8 White Panel) -->
-    <div class="panel-white p-3 mb-4">
+    <div class="panel-white p-2.5 p-sm-3 mb-3 mb-md-4">
       <div class="row g-2 align-items-center">
         <!-- Ô tìm kiếm -->
         <div class="col-md-6">

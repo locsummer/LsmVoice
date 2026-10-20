@@ -703,13 +703,30 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ==========================================================================
-   Persistent Floating Player Safe Spacing
+   Persistent Floating Player Safe Spacing & Mobile Safe Area
+   Hỗ trợ Safe Area (Notch tai thỏ, Dynamic Island, Home Bar trên iPhone & Android)
    Đảm bảo toàn bộ nội dung trang (Bảng danh sách, thư viện, lịch sử, phòng thu...)
    không bao giờ bị Audio Player che khuất ở chân trang trên cả Desktop, Tablet & Mobile
    ========================================================================== */
 
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+.ui8-header {
+  padding-top: var(--safe-top);
+}
+
+.mobile-drawer-panel {
+  padding-top: var(--safe-top) !important;
+  padding-bottom: var(--safe-bottom) !important;
+}
+
 main.has-player-active {
-  padding-bottom: 130px !important;
+  padding-bottom: calc(130px + var(--safe-bottom)) !important;
 }
 
 /* ==========================================================================
@@ -820,19 +837,53 @@ html, body {
     border-radius: var(--radius-lg) !important;
   }
 
-  /* Đảm bảo nội dung không bị Player che khuất ở chân trang trên điện thoại */
+  /* Đảm bảo nội dung không bị Bottom Navigation Bar & Player che khuất ở chân trang trên điện thoại */
+  main {
+    padding-bottom: calc(68px + var(--safe-bottom)) !important;
+  }
+
   main.has-player-active {
-    padding-bottom: 110px !important;
+    padding-bottom: calc(165px + var(--safe-bottom)) !important;
   }
 
   /* Toast thông báo hiển thị vừa vặn trên điện thoại */
   .toast-container-custom {
-    top: 12px !important;
+    top: max(12px, var(--safe-top)) !important;
     right: 12px !important;
     left: 12px !important;
   }
 
   .ui8-toast {
     max-width: 100% !important;
+  }
+}
+
+/* ==========================================================================
+   Compact Screen Framework (<= 375px / iPhone SE & Small Androids)
+   ========================================================================== */
+@media (max-width: 375px) {
+  .hero-container {
+    padding: 12px 10px !important;
+  }
+
+  .page-title {
+    font-size: 1.2rem !important;
+  }
+
+  .hero-btn {
+    font-size: 12px !important;
+    padding: 0 8px !important;
+  }
+
+  .btn-primary-action,
+  .btn-secondary-action {
+    height: 38px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+  }
+
+  .admin-tab-pill {
+    padding: 5px 10px !important;
+    font-size: 11.5px !important;
   }
 }
