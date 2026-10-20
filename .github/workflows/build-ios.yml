@@ -63,46 +63,6 @@ jobs:
           cd client/ios/App
           xcodebuild -project App.xcodeproj -scheme App -derivedDataPath derived_data -resolvePackageDependencies
 
-      - name: Patch Swift Interfaces for Capacitor 8 Compatibility
-        run: |
-          cd client/ios/App
-          node -e "
-          const fs = require('fs');
-          const path = require('path');
-          let count = 0;
-          function walk(dir) {
-            if (!fs.existsSync(dir)) return;
-            try {
-              for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
-                const full = path.join(dir, f.name);
-                if (f.isDirectory()) {
-                  walk(full);
-                } else if (f.name.endsWith('.swiftinterface')) {
-                  let c = fs.readFileSync(full, 'utf8');
-                  const target = String.fromCharCode(36) + 'NonescapableTypes';
-                  if (c.includes(target)) {
-                    console.log('Unlocking Capacitor methods in:', full);
-                    c = c.split(target).join('true');
-                    fs.writeFileSync(full, c, 'utf8');
-                    count++;
-                  }
-                }
-              }
-            } catch (e) {}
-          }
-          walk('derived_data');
-          walk(path.join(process.env.HOME, 'Library/Caches'));
-          walk(path.join(process.env.HOME, 'Library/Developer'));
-          console.log('Total patched interfaces:', count);
-          "
-          echo "=== Re-signing XCFrameworks Ad-hoc ==="
-          defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidatation -bool YES || true
-          defaults write com.apple.dt.Xcode IDESkipMacroFingerprintValidation -bool YES || true
-          find derived_data -type d \( -name "*.framework" -o -name "*.xcframework" \) | while read -r f; do
-            echo "Re-signing: $f"
-            codesign --force --deep --sign - "$f" 2>/dev/null || true
-          done
-
       - name: Compile iOS App (Unsigned for Sideloading)
         run: |
           cd client/ios/App
@@ -112,6 +72,8 @@ jobs:
             -configuration Debug \
             -destination 'generic/platform=iOS' \
             -derivedDataPath derived_data \
+            -xcconfig build.xcconfig \
+            OTHER_SWIFT_FLAGS='$(inherited) -enable-experimental-feature NonescapableTypes' \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -122,7 +84,7 @@ jobs:
           if [ $STATUS -ne 0 ]; then
             echo "::error::Xcode build failed with exit code $STATUS"
             echo "==================== XCODE BUILD ERROR LOG ===================="
-            grep -i -E "error:|warning:|failed" xcode_build.log | head -n 50 || true
+            grep -i -E "error:|failed" xcode_build.log | head -n 50 || true
             tail -n 80 xcode_build.log
             echo "==============================================================="
             exit $STATUS
