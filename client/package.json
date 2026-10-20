@@ -12,7 +12,8 @@
     "android:open": "npx cap open android",
     "android:build": "cd android && gradlew.bat assembleDebug",
     "android:bundle": "cd android && gradlew.bat bundleRelease",
-    "ios:open": "npx cap open ios"
+    "ios:open": "npx cap open ios",
+    "postinstall": "node scripts/patch-app-plugin.js"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.2",

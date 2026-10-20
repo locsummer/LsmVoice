@@ -42,6 +42,7 @@ jobs:
         run: |
           cd client
           npm install
+          node scripts/patch-app-plugin.js
 
       - name: Build Web Client (Vite)
         run: |
