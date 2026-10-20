@@ -19,7 +19,6 @@
     "@capacitor/core": "^8.5.3",
     "@capacitor/share": "^8.0.3",
     "@capacitor/splash-screen": "^8.0.2",
-    "@capacitor/status-bar": "^8.0.4",
     "@popperjs/core": "^2.11.8",
     "@vitejs/plugin-vue": "^5.2.1",
     "axios": "^1.7.9",

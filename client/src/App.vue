@@ -13,7 +13,6 @@ import { usePlayerStore } from './stores/playerStore.js';
 import { useNotificationStore } from './stores/notificationStore.js';
 import { isNativeApp } from './services/api.js';
 import { App as CapApp } from '@capacitor/app';
-import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
 
 const router = useRouter();
@@ -56,11 +55,6 @@ onMounted(async () => {
 
   // Khởi tạo các tính năng Native trên Android & iOS
   if (isNativeApp()) {
-    try {
-      await StatusBar.setStyle({ style: Style.Dark });
-      await StatusBar.setBackgroundColor({ color: '#11131D' });
-    } catch (_) {}
-
     try {
       await SplashScreen.hide();
     } catch (_) {}
