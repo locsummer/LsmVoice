@@ -73,7 +73,8 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath derived_data \
             -xcconfig build.xcconfig \
-            OTHER_SWIFT_FLAGS='$(inherited) -enable-experimental-feature NonescapableTypes' \
+            OTHER_SWIFT_FLAGS='$(inherited) -enable-upcoming-feature NonescapableTypes -enable-experimental-feature NonescapableTypes' \
+            SWIFT_UPCOMING_FEATURE_PREPARATION=YES \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
