@@ -3,7 +3,6 @@ import { computed, ref, onMounted } from 'vue';
 import { useTtsStore } from '../stores/ttsStore.js';
 import { usePlayerStore } from '../stores/playerStore.js';
 import { getAudioDownloadUrl, isNativeApp } from '../services/api.js';
-import { Share } from '@capacitor/share';
 
 const emit = defineEmits(['close']);
 
@@ -11,13 +10,8 @@ const ttsStore = useTtsStore();
 const playerStore = usePlayerStore();
 const canShare = ref(false);
 
-onMounted(async () => {
-  try {
-    const res = await Share.canShare();
-    canShare.value = res.value || isNativeApp();
-  } catch {
-    canShare.value = typeof navigator !== 'undefined' && !!navigator.share;
-  }
+onMounted(() => {
+  canShare.value = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 });
 
 const currentJob = computed(() => ttsStore.activeJob);
@@ -28,14 +22,17 @@ const handleShare = async () => {
   const rawUrl = currentJob.value?.mergedAudioUrl || playerStore.currentAudioUrl;
   const downloadUrl = rawUrl ? getAudioDownloadUrl(rawUrl, trackTitle.value) : '';
   try {
-    await Share.share({
-      title: trackTitle.value,
-      text: `LsmVoice - Bản đọc: ${trackTitle.value}`,
-      url: downloadUrl || undefined,
-      dialogTitle: 'Chia sẻ bản ghi âm LsmVoice',
-    });
+    if (navigator.share) {
+      await navigator.share({
+        title: trackTitle.value,
+        text: `LsmVoice - Bản đọc: ${trackTitle.value}`,
+        url: downloadUrl || window.location.href,
+      });
+    }
   } catch (err) {
-    console.log('Chia sẻ bị hủy hoặc không hỗ trợ:', err);
+    if (err.name !== 'AbortError') {
+      console.log('Chia sẻ bị hủy hoặc không hỗ trợ:', err);
+    }
   }
 };
 
