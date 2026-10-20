@@ -5,10 +5,6 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
-permissions:
-  contents: write
-  actions: read
-
 jobs:
   build-ios:
     name: Build iOS Package
@@ -51,7 +47,7 @@ jobs:
       - name: Compile iOS App (Unsigned for Sideloading)
         run: |
           cd client/ios/App
-          set -o pipefail
+          set +e
           xcodebuild -project App.xcodeproj \
             -scheme App \
             -configuration Release \
@@ -62,21 +58,15 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGN_STYLE="Manual" \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            build 2>&1 | tee xcode_build.log
-
-      - name: Post Error as Commit Comment
-        if: failure()
-        run: |
-          if [ -f client/ios/App/xcode_build.log ]; then
-            ERROR_TEXT=$(tail -n 45 client/ios/App/xcode_build.log)
-            gh api repos/${{ github.repository }}/commits/${{ github.sha }}/comments \
-              -f body="### ❌ Xcode Build Error Log:
-          \`\`\`
-          $ERROR_TEXT
-          \`\`\`" || true
+            build > xcode_build.log 2>&1
+          STATUS=$?
+          if [ $STATUS -ne 0 ]; then
+            echo "::error::Xcode build failed with exit code $STATUS"
+            echo "==================== XCODE BUILD ERROR LOG ===================="
+            tail -n 80 xcode_build.log
+            echo "==============================================================="
+            exit $STATUS
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Xcode Log on Failure
         if: failure()
