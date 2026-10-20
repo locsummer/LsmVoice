@@ -95,6 +95,13 @@ jobs:
           walk(path.join(process.env.HOME, 'Library/Developer'));
           console.log('Total patched interfaces:', count);
           "
+          echo "=== Re-signing XCFrameworks Ad-hoc ==="
+          defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidatation -bool YES || true
+          defaults write com.apple.dt.Xcode IDESkipMacroFingerprintValidation -bool YES || true
+          find derived_data -type d \( -name "*.framework" -o -name "*.xcframework" \) | while read -r f; do
+            echo "Re-signing: $f"
+            codesign --force --deep --sign - "$f" 2>/dev/null || true
+          done
 
       - name: Compile iOS App (Unsigned for Sideloading)
         run: |
