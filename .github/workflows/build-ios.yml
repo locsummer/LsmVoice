@@ -37,9 +37,15 @@ jobs:
         run: |
           xcodebuild -version
 
+      - name: Resolve Swift Package Dependencies
+        run: |
+          cd client/ios/App
+          xcodebuild -project App.xcodeproj -scheme App -resolvePackageDependencies
+
       - name: Compile iOS App (Unsigned for Sideloading)
         run: |
           cd client/ios/App
+          set -o pipefail
           xcodebuild -project App.xcodeproj \
             -scheme App \
             -configuration Release \
@@ -48,7 +54,13 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build
+            CODE_SIGN_STYLE="Manual" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            build 2>&1 | tee xcode_build.log || {
+              echo "=== XCODE BUILD FAILED - RECENT LOGS ==="
+              tail -n 80 xcode_build.log
+              exit 1
+            }
 
       - name: Package Payload into IPA
         run: |
